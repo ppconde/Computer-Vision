@@ -1,0 +1,5 @@
+/media/andre/Dados/UA/MEAI/Visão por Computador/Projectos/cv1617-60623/Aula1/build/CMakeFiles/edit_cache.dir
+/media/andre/Dados/UA/MEAI/Visão por Computador/Projectos/cv1617-60623/Aula1/build/CMakeFiles/rebuild_cache.dir
+/media/andre/Dados/UA/MEAI/Visão por Computador/Projectos/cv1617-60623/Aula1/build/source/CMakeFiles/edit_cache.dir
+/media/andre/Dados/UA/MEAI/Visão por Computador/Projectos/cv1617-60623/Aula1/build/source/CMakeFiles/rebuild_cache.dir
+/media/andre/Dados/UA/MEAI/Visão por Computador/Projectos/cv1617-60623/Aula1/build/source/CMakeFiles/DisplayImage.dir

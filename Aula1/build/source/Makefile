@@ -48,10 +48,10 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = "/media/andre/Dados/UA/MEAI/2º/Visão por Computador/Projectos/DisplayImage"
+CMAKE_SOURCE_DIR = "/media/andre/Dados/UA/MEAI/Visão por Computador/Projectos/cv1617-60623/Aula1"
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = "/media/andre/Dados/UA/MEAI/2º/Visão por Computador/Projectos/DisplayImage"
+CMAKE_BINARY_DIR = "/media/andre/Dados/UA/MEAI/Visão por Computador/Projectos/cv1617-60623/Aula1/build"
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -80,14 +80,14 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start "/media/andre/Dados/UA/MEAI/2º/Visão por Computador/Projectos/DisplayImage/CMakeFiles" "/media/andre/Dados/UA/MEAI/2º/Visão por Computador/Projectos/DisplayImage/CMakeFiles/progress.marks"
-	$(MAKE) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start "/media/andre/Dados/UA/MEAI/2º/Visão por Computador/Projectos/DisplayImage/CMakeFiles" 0
+	cd "/media/andre/Dados/UA/MEAI/Visão por Computador/Projectos/cv1617-60623/Aula1/build" && $(CMAKE_COMMAND) -E cmake_progress_start "/media/andre/Dados/UA/MEAI/Visão por Computador/Projectos/cv1617-60623/Aula1/build/CMakeFiles" "/media/andre/Dados/UA/MEAI/Visão por Computador/Projectos/cv1617-60623/Aula1/build/source/CMakeFiles/progress.marks"
+	cd "/media/andre/Dados/UA/MEAI/Visão por Computador/Projectos/cv1617-60623/Aula1/build" && $(MAKE) -f CMakeFiles/Makefile2 source/all
+	$(CMAKE_COMMAND) -E cmake_progress_start "/media/andre/Dados/UA/MEAI/Visão por Computador/Projectos/cv1617-60623/Aula1/build/CMakeFiles" 0
 .PHONY : all
 
 # The main clean target
 clean:
-	$(MAKE) -f CMakeFiles/Makefile2 clean
+	cd "/media/andre/Dados/UA/MEAI/Visão por Computador/Projectos/cv1617-60623/Aula1/build" && $(MAKE) -f CMakeFiles/Makefile2 source/clean
 .PHONY : clean
 
 # The main clean target
@@ -97,30 +97,32 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	$(MAKE) -f CMakeFiles/Makefile2 preinstall
+	cd "/media/andre/Dados/UA/MEAI/Visão por Computador/Projectos/cv1617-60623/Aula1/build" && $(MAKE) -f CMakeFiles/Makefile2 source/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	$(MAKE) -f CMakeFiles/Makefile2 preinstall
+	cd "/media/andre/Dados/UA/MEAI/Visão por Computador/Projectos/cv1617-60623/Aula1/build" && $(MAKE) -f CMakeFiles/Makefile2 source/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	$(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd "/media/andre/Dados/UA/MEAI/Visão por Computador/Projectos/cv1617-60623/Aula1/build" && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
-#=============================================================================
-# Target rules for targets named DisplayImage
+# Convenience name for target.
+source/CMakeFiles/DisplayImage.dir/rule:
+	cd "/media/andre/Dados/UA/MEAI/Visão por Computador/Projectos/cv1617-60623/Aula1/build" && $(MAKE) -f CMakeFiles/Makefile2 source/CMakeFiles/DisplayImage.dir/rule
+.PHONY : source/CMakeFiles/DisplayImage.dir/rule
 
-# Build rule for target.
-DisplayImage: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 DisplayImage
+# Convenience name for target.
+DisplayImage: source/CMakeFiles/DisplayImage.dir/rule
+
 .PHONY : DisplayImage
 
 # fast build rule for target.
 DisplayImage/fast:
-	$(MAKE) -f CMakeFiles/DisplayImage.dir/build.make CMakeFiles/DisplayImage.dir/build
+	cd "/media/andre/Dados/UA/MEAI/Visão por Computador/Projectos/cv1617-60623/Aula1/build" && $(MAKE) -f source/CMakeFiles/DisplayImage.dir/build.make source/CMakeFiles/DisplayImage.dir/build
 .PHONY : DisplayImage/fast
 
 DisplayImage.o: DisplayImage.cpp.o
@@ -129,7 +131,7 @@ DisplayImage.o: DisplayImage.cpp.o
 
 # target to build an object file
 DisplayImage.cpp.o:
-	$(MAKE) -f CMakeFiles/DisplayImage.dir/build.make CMakeFiles/DisplayImage.dir/DisplayImage.cpp.o
+	cd "/media/andre/Dados/UA/MEAI/Visão por Computador/Projectos/cv1617-60623/Aula1/build" && $(MAKE) -f source/CMakeFiles/DisplayImage.dir/build.make source/CMakeFiles/DisplayImage.dir/DisplayImage.cpp.o
 .PHONY : DisplayImage.cpp.o
 
 DisplayImage.i: DisplayImage.cpp.i
@@ -138,7 +140,7 @@ DisplayImage.i: DisplayImage.cpp.i
 
 # target to preprocess a source file
 DisplayImage.cpp.i:
-	$(MAKE) -f CMakeFiles/DisplayImage.dir/build.make CMakeFiles/DisplayImage.dir/DisplayImage.cpp.i
+	cd "/media/andre/Dados/UA/MEAI/Visão por Computador/Projectos/cv1617-60623/Aula1/build" && $(MAKE) -f source/CMakeFiles/DisplayImage.dir/build.make source/CMakeFiles/DisplayImage.dir/DisplayImage.cpp.i
 .PHONY : DisplayImage.cpp.i
 
 DisplayImage.s: DisplayImage.cpp.s
@@ -147,7 +149,7 @@ DisplayImage.s: DisplayImage.cpp.s
 
 # target to generate assembly for a file
 DisplayImage.cpp.s:
-	$(MAKE) -f CMakeFiles/DisplayImage.dir/build.make CMakeFiles/DisplayImage.dir/DisplayImage.cpp.s
+	cd "/media/andre/Dados/UA/MEAI/Visão por Computador/Projectos/cv1617-60623/Aula1/build" && $(MAKE) -f source/CMakeFiles/DisplayImage.dir/build.make source/CMakeFiles/DisplayImage.dir/DisplayImage.cpp.s
 .PHONY : DisplayImage.cpp.s
 
 # Help Target
@@ -173,6 +175,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	$(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	cd "/media/andre/Dados/UA/MEAI/Visão por Computador/Projectos/cv1617-60623/Aula1/build" && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

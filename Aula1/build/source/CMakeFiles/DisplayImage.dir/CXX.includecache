@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/media/andre/Dados/UA/MEAI/2º/Visão por Computador/Projectos/DisplayImage/DisplayImage.cpp
+/media/andre/Dados/UA/MEAI/Visão por Computador/Projectos/cv1617-60623/Aula1/source/DisplayImage.cpp
 stdio.h
 -
 opencv2/opencv.hpp
