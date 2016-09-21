@@ -1,0 +1,3 @@
+/media/andre/Dados/UA/MEAI/2º/Visão por Computador/Projectos/DisplayImage/CMakeFiles/edit_cache.dir
+/media/andre/Dados/UA/MEAI/2º/Visão por Computador/Projectos/DisplayImage/CMakeFiles/rebuild_cache.dir
+/media/andre/Dados/UA/MEAI/2º/Visão por Computador/Projectos/DisplayImage/CMakeFiles/DisplayImage.dir
