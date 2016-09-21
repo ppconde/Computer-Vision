@@ -1,6 +1,6 @@
-# cv1617-60623
+## cv1617-60623
 -------------------------------------------------------------------------------
-		Computer Vision
+# Computer Vision
 -------------------------------------------------------------------------------
 
 This repository is destined to be used in the development of projects associated with the subject Computer Vision, taught in Universidade de Aveiro, Portugal.
