@@ -10,4 +10,4 @@ These projects use C++ as a programming language, taking advantage of a extensiv
 
 ### Aula 1
 * DisplayImage
-    - Displays selected image in a window.
+    Displays selected image in a window.
