@@ -10,7 +10,7 @@ These projects use C++ as a programming language, taking advantage of a extensiv
 ## Tools
 * cvmake
 	- Small shell script that automatically builds, compiles and cleans up projects and exercises.
-	- Needs to be stored somewhere, symlinked to `/usr/bin` and have its path added in the bash config file for it to work properly.
+	- Needs to be stored somewhere, symlinked to `/usr/bin` (eg. `ln -s ~/scripts/cvmake /usr/bin/cvmake`) and have its path added in the bash config file for it to work properly (eg. `PATH=~/scripts:$PATH`).
 	- Can be executed by typing `cvmake -c` in the terminal. The argument `-c` is optional and using it cleans the excess files created during the build.
 
 ## Aula 1
