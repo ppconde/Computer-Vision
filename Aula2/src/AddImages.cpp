@@ -30,8 +30,14 @@ int main(){
 		return -1;
 	}
 
-	//creates window
+	//creates windows
+	namedWindow("Original Image 1", 1);
+	namedWindow("Original Image 2", 1);
 	namedWindow("Linear Blend", 1);
+
+	//shows original images
+	imshow("Original Image 1", src1);
+	imshow("Original Image 2", src2);
 
 	//creates new image as weighted blend of other two
 	beta = (1.0 - alpha);

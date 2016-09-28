@@ -8,9 +8,9 @@ double alpha;
 int beta;
 
 int main(int argc, char** argv){
-	//reads image
-	Mat image = imread(argv[1]);
-	Mat new_image = Mat::zeros(image.size(), image.type());
+	//reads image from file
+	Mat image1 = imread(argv[1]);
+	Mat new_image = Mat::zeros(image1.size(), image1.type());
 
 	//initializes values
 	std::cout << "Basic Linear Transformations " << std::endl;
@@ -19,11 +19,11 @@ int main(int argc, char** argv){
 	std::cout << " Enter beta value [0-100]: "; std::cin >> beta;
 
 	//new_image(i,j) = alpha*image(i,j) + beta
-	for (int y = 0; y < image.rows; y++){
-		for (int x = 0; x <image.cols; x++){
+	for (int y = 0; y < image1.rows; y++){
+		for (int x = 0; x <image1.cols; x++){
 			for (int c = 0; c < 3; c++){
 				new_image.at<Vec3b>(y, x)[c] = 
-				  saturate_cast<uchar>(alpha * (image.at<Vec3b>(y, x)[c]) + beta);  
+				  saturate_cast<uchar>(alpha * (image1.at<Vec3b>(y, x)[c]) + beta);  
 			}
 		}
 	}
@@ -33,8 +33,19 @@ int main(int argc, char** argv){
 	namedWindow("New Image", 1);
 
 	//shows images
-	imshow("Original Image", image);
+	imshow("Original Image", image1);
 	imshow("New Image", new_image);
+
+	//reads image from computer camera
+	VideoCapture cap(0);				//initializes camera
+	if (!cap.isOpened()) return -1;		//if not initialized, aborts
+
+	Mat image2;
+	namedWindow("Camera Picture", 1);
+
+	cap >> image2;						//captures camera frame
+
+	imshow("Camera Picture", image2);
 
 	//waits for input
 	waitKey(0);
