@@ -17,5 +17,11 @@ These projects use C++ as a programming language, taking advantage of a extensiv
 * DisplayImage
     - Displays selected image in a window.
 
+## Aula 2
 * Color2Gray
-	- Converts selected image to grayscale, saving the it and displaying both the original and new images.
+	- Converts selected image to grayscale, saving it and displaying both the original and new images.
+* AddImages
+	- Adds two images with the same pixel size to output a new image. Needs the input of the alpha of the first image.
+* ChangeBrigtCront
+	- Reads and image, takes alpha and beta as input values for levels of brightness and constrast and outputs new image with those levels modified.
+	- Reads images from computer camera feed.

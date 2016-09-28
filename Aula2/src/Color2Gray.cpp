@@ -27,7 +27,7 @@ int main(int argc, char** argv){
 	cvtColor(image, grayImage, CV_BGR2GRAY);
 
 	//writes grayscale image
-	imwrite("images/grayImage.jpg", grayImage);
+	imwrite("img/grayImage.jpg", grayImage);
 
 	//displays both color and grayscale images
 	namedWindow(imageName, CV_WINDOW_AUTOSIZE);
