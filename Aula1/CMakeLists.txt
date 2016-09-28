@@ -20,4 +20,4 @@ INCLUDE_DIRECTORIES(
 	${OpenCV_INCLUDE_DIR}
 )
 # Add sources directory
-ADD_SUBDIRECTORY( source )
+ADD_SUBDIRECTORY( src )
