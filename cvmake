@@ -7,20 +7,20 @@ if [ -f CMakeLists.txt ];
 then
 	mkdir -p build
 	cd build
-	echo "Building project..."
+	echo " Building project..."
 	cmake ..
-	echo "Compiling project..."
+	echo " Compiling project..."
 	make
 	cd ..
 	while getopts ":c" opt; do
 		case $opt in
 			c)
-			echo "Cleaning up..." >&2
+			echo " Cleaning up..." >&2
 			rm -rf build
 			;;
 		esac
 	done
-	echo "Done!"
+	echo " Done!"
 else
-	echo "Error: The source directory \""$PWD"\" does not appear to contain CMakeLists.txt."
+	echo " Error: The source directory \""$PWD"\" does not appear to contain CMakeLists.txt."
 fi
