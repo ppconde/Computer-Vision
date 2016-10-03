@@ -3,6 +3,12 @@
 # This script creates the home directory and all associated folders and 'CMakeList' files required for the Computer Vision course's exercises.
 # Each home directory created needs to be named as an argument.
 
+if [ $# -eq 0 ];
+then
+	echo " Error: no input arguments given!"
+	exit 1
+fi
+
 for n in "$@"
 do
 	if [ -e $n ];
