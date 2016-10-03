@@ -25,3 +25,17 @@ These projects use C++ as a programming language, taking advantage of a extensiv
 * ChangeBrigtCront
 	- Reads and image, takes alpha and beta as input values for levels of brightness and constrast and outputs new image with those levels modified.
 	- Reads images from computer camera feed.
+
+## Aula 3
+* VideoCapture
+	- Reads images from computer camera feed, outputting them sequentially to form a video feed.
+	- Manipulates the video frames, displaying them as a grayscale image or as a black & white image, with several options of thresholding.
+* DetectSkin
+	- Outputs computer camera information as a video feed.
+	- Converts video output into several colorspaces (selected by the user), followed by extracting the pixels of the image that fall within a certain range, with the intent of finding objects with the color of skin.
+	- Superimposes the pixels found with the previous method on the original video feed.
+* ImageFilter
+	- Filters a video feed with several filters, chosen by the user.
+* GetHist
+	- Reads an image from the computer camera feed and analyzes it, displaying its histograms.
+	- Capable of displaying BGR histograms, grayscale histogram, or both at the same time, for comparison.
