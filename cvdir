@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# This script creates the home directory and all associated folders and 'CMakeList' files required for the Computer Vision course's exercises.
+# Each home directory created needs to be named as an argument.
+
+for n in "$@"
+do
+	if [ -e $n ];
+	then
+		echo " Error: The \""$n"\" folder already exist!"
+		exit 1
+	fi
+done
+
+for n in "$@"
+do
+	mkdir $n
+	cd $n
+	mkdir src bin img
+	echo "cmake_minimum_required(VERSION 2.8)" > "CMakeList.txt"
+	echo "project( ProjectName )" >> "CMakeList.txt"
+	echo "MESSAGE (\"\n==> Finding 3rd Party Packages\")" >> "CMakeList.txt"
+	echo "find_package( OpenCV REQUIRED )" >> "CMakeList.txt"
+	echo "SET( CMAKE_C_FLAGS \"\${CMAKE_C_FLAGS} -Wall -W\" )" >> "CMakeList.txt"
+	echo "SET( CMAKE_C_FLAGS_RELEASE \"-O3\" )" >> "CMakeList.txt"
+	echo "SET( CMAKE_C_FLAGS_DEBUG \"-g3\" )" >> "CMakeList.txt"
+	echo "SET( CMAKE_CXX_FLAGS \"\${CMAKE_CXX_FLAGS} -W -Wall\" )" >> "CMakeList.txt"
+	echo "SET( CMAKE_CXX_FLAGS_RELEASE \"-O3\" )" >> "CMakeList.txt"
+	echo "SET( CMAKE_CXX_FLAGS_DEBUG \"-g3\" )" >> "CMakeList.txt"
+	echo "SET( BASE_DIR \${CMAKE_SOURCE_DIR} )" >> "CMakeList.txt"
+	echo "SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY \${BASE_DIR}/bin )" >> "CMakeList.txt"
+	echo "INCLUDE_DIRECTORIES( \${OpenCV_INCLUDE_DIR} )" >> "CMakeList.txt"
+	echo "ADD_SUBDIRECTORY( src )" >> "CMakeList.txt"
+	cd src
+	echo "add_executable( phldr phldr.cpp )" > "CMakeList.txt"
+	echo "target_link_libraries( phldr \${OpenCV_LIBS} )" >> "CMakeList.txt"
+	cd ../..
+done
+echo " Directory(ies) successfully created and populated!"
