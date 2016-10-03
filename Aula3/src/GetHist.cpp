@@ -1,6 +1,4 @@
-#include <opencv2/core/core.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/opencv.hpp>
 #include <iostream>
 
 using namespace cv;
@@ -21,17 +19,17 @@ int main() {
 	VideoCapture cap(0);
 	if (!cap.isOpened()) return -1;
 
-	//gets camera picture and siplays it
+	//gets camera picture and displays it
 	Mat frame;
 	cap >> frame;
 	namedWindow("Original Picture", 1);
 	imshow("Original Picture", frame);
 
 	//configures histograms
-	int histSize = 256;					//sets number of columns
-	float range[] = {0, 256};			//sets ranges for B, G and R
-	const float* histRange = {range};
-	bool uniform = true, accumulate = false;
+	int histSize = 256;							//sets number of columns
+	float range[] = {0, 256};					//sets ranges for B, G and R
+	const float* histRange = {range};			
+	bool uniform = true, accumulate = false;	//initializes some 'calcHist' args
 
 	//draws histograms
 	int histW = 512, histH = 400;				//sets size of window
@@ -53,7 +51,7 @@ int main() {
 		//normalizes results to number of rows that the images has
 		normalize(grayHist, grayHist, 0, histImage.rows, NORM_MINMAX, -1, Mat());
 
-		//draws grayscale channel
+		//draws grayscale channel (image, line points, color, thickness, 8-conn line, no shift)
 		for (int i = 1; i < histSize; i++) {
 			line(histImage, Point(binW*(i - 1), histH - cvRound(grayHist.at<float>(i - 1))),
 							Point(binW*(i), histH - cvRound(grayHist.at<float>(i))),
@@ -63,8 +61,8 @@ int main() {
 
 	if (type == 0 || type == 2) {
 		//splits image in three planes (BGR)
-		vector<Mat> bgrPlanes;
-		split(frame, bgrPlanes);
+		vector<Mat> bgrPlanes;					//creates vector of arrays
+		split(frame, bgrPlanes);				//stores split image's arrays in vector
 
 		Mat bHist, gHist, rHist;
 

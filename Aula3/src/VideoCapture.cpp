@@ -1,5 +1,3 @@
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
 #include <opencv2/opencv.hpp>
 #include <iostream>
 
@@ -42,7 +40,6 @@ int main() {
 	if (type) {
 		if (!method) cout << " Enter threshold value [0-255]: ";
 		else cout << " Enter block size [3-255] (only odd numbers): ";
-
 		cin >> threshValue;
 	}
 
