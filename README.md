@@ -9,7 +9,7 @@ These projects use C++ as a programming language, taking advantage of a extensiv
 
 The folders are organized as follows:
 ```
-Home Dir(eg. Aula1)
+Home Dir (eg. Aula1)
   |
   |_____ src (source files)
   |         |
