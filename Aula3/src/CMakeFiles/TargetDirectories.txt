@@ -1,7 +1,0 @@
-/home/ppconde/Documents/VC/git/cv1617-60623/Aula3/src/CMakeFiles/edit_cache.dir
-/home/ppconde/Documents/VC/git/cv1617-60623/Aula3/src/CMakeFiles/rebuild_cache.dir
-/home/ppconde/Documents/VC/git/cv1617-60623/Aula3/src/CMakeFiles/VideoCapture.dir
-/home/ppconde/Documents/VC/git/cv1617-60623/Aula3/src/CMakeFiles/DetectSkin.dir
-/home/ppconde/Documents/VC/git/cv1617-60623/Aula3/src/CMakeFiles/ImageFilter.dir
-/home/ppconde/Documents/VC/git/cv1617-60623/Aula3/src/CMakeFiles/HistogramComp.dir
-/home/ppconde/Documents/VC/git/cv1617-60623/Aula3/src/CMakeFiles/GetHist.dir

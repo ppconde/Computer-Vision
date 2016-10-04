@@ -1,1 +1,0 @@
-/usr/bin/c++      CMakeFiles/VideoCapture.dir/VideoCapture.cpp.o  -o VideoCapture -rdynamic 
