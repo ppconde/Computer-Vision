@@ -9,3 +9,6 @@ target_link_libraries( ImageFilter ${OpenCV_LIBS} )
 
 add_executable( GetHist GetHist.cpp )
 target_link_libraries( GetHist ${OpenCV_LIBS} )
+
+add_executable( HistogramComp HistogramComp.cpp )
+target_link_libraries( HistogramComp ${OpenCV_LIBS} )

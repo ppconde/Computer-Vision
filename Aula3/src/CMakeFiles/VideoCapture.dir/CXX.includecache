@@ -1,0 +1,14 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/ppconde/Documents/VC/git/cv1617-60623/Aula3/src/VideoCapture.cpp
+opencv2/opencv.hpp
+-
+iostream
+-
+
