@@ -1,0 +1,1 @@
+/usr/bin/c++      CMakeFiles/ChangeBrigtCront.dir/ChangeBrigtCront.cpp.o  -o ChangeBrigtCront -rdynamic 
