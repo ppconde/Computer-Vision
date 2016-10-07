@@ -1,1 +1,0 @@
-/usr/bin/c++      CMakeFiles/Color2Gray.dir/Color2Gray.cpp.o  -o Color2Gray -rdynamic 

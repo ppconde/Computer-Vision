@@ -1,5 +1,0 @@
-/home/ppconde/Documents/VC/git/cv1617-60623/Aula2/src/CMakeFiles/edit_cache.dir
-/home/ppconde/Documents/VC/git/cv1617-60623/Aula2/src/CMakeFiles/Color2Gray.dir
-/home/ppconde/Documents/VC/git/cv1617-60623/Aula2/src/CMakeFiles/ChangeBrigtCront.dir
-/home/ppconde/Documents/VC/git/cv1617-60623/Aula2/src/CMakeFiles/rebuild_cache.dir
-/home/ppconde/Documents/VC/git/cv1617-60623/Aula2/src/CMakeFiles/AddImages.dir
