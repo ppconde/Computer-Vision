@@ -24,8 +24,18 @@ int main() {
 	cin >> type;
 
 	if (type) {
-		cout << " Choose threshold method (global = 0, median = 1, gaussian = 2): ";
-		cin >> method;	
+		cout << " Choose threshold method (global = 0, otsu = 1, median = 2, gaussian = 3): ";
+		cin >> method;
+
+		//asks for user input regarding filter size
+		if (!method) {
+			cout << " Enter threshold value [0-255]: ";
+			cin >> threshValue;
+		}
+		else if (method == 2 || method == 3) {
+			cout << " Enter block size [3-255] (only odd numbers): ";
+			cin >> threshValue;
+		}
 	}
 	
 	//creates image objects and windows
@@ -35,13 +45,6 @@ int main() {
 
 	namedWindow("Video Capture", 1);
 	namedWindow("Filtered Capture", 1);
-
-	//asks for user input regarding filter size
-	if (type) {
-		if (!method) cout << " Enter threshold value [0-255]: ";
-		else cout << " Enter block size [3-255] (only odd numbers): ";
-		cin >> threshValue;
-	}
 
 	//displays original video capture and alternatives
 	for(;;) {
@@ -55,9 +58,12 @@ int main() {
 	    else {
 	    	//outputs selected threshold
 	    	if (method == 1) {
-	    		adaptiveThreshold(grayscale, bw, 255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY, threshValue, 0);
+	    		threshold(grayscale, bw, 0, 255, THRESH_BINARY + THRESH_OTSU);
 	    	}
 	    	else if (method == 2) {
+	    		adaptiveThreshold(grayscale, bw, 255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY, threshValue, 0);
+	    	}
+	    	else if (method == 3) {
 	    		adaptiveThreshold(grayscale, bw, 255, ADAPTIVE_THRESH_GAUSSIAN_C, THRESH_BINARY, threshValue, 0);
 	    	}
 	    	else threshold(grayscale, bw, threshValue, 255, THRESH_BINARY);
