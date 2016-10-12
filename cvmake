@@ -5,22 +5,17 @@
 
 if [ -f CMakeLists.txt ]; then
 	if [ $# -gt 1 ] || [ $1 != "-c" ]; then
-		cd src
-		file="CMakeLists.txt"
+		file=src/CMakeLists.txt
 		IFS=$'\n'
 		lines=`cat $file`
-		for line in $lines; do
-			echo $line >> CMakeListsTemp.txt
-		done
-		echo "" > CMakeLists.txt
+		echo "" > src/CMakeLists.txt
 		for arg in $@; do
 			if [ $arg == "-c" ]; then
 				continue
 			fi
-			echo "add_executable("$arg" "$arg".cpp)" >> CMakeLists.txt
-			echo "target_link_libraries("$arg" \${OpenCV_LIBS})" >> CMakeLists.txt
+			echo "add_executable("$arg" "$arg".cpp)" >> src/CMakeLists.txt
+			echo "target_link_libraries("$arg" \${OpenCV_LIBS})" >> src/CMakeLists.txt
 		done
-		cd ..
 	fi
 	mkdir -p build
 	cd build
@@ -30,13 +25,10 @@ if [ -f CMakeLists.txt ]; then
 	make
 	cd ..
 	if [ $# -gt 1 ] || [ $1 != "-c" ]; then
-		cd src
-		echo "" > CMakeLists.txt
+		echo "" > src/CMakeLists.txt
 		for line in $lines; do
-			echo $line >> CMakeLists.txt
+			echo $line >> src/CMakeLists.txt
 		done
-		rm -rf CMakeListsTemp.txt
-		cd ..
 	fi
 	if [ $# -ge 1 ] && [ $1 == "-c" ]; then
 		echo " Cleaning up..." >&2
