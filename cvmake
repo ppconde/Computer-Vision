@@ -3,8 +3,25 @@
 # This script builds and compiles source files into an executable.
 # This only works if ran from the base directory of the project.
 
-if [ -f CMakeLists.txt ];
-then
+if [ -f CMakeLists.txt ]; then
+	if [ $# -gt 1 ] || [ $1 != "-c" ]; then
+		cd src
+		file="CMakeLists.txt"
+		IFS=$'\n'
+		lines=`cat $file`
+		for line in $lines; do
+			echo $line >> CMakeListsTemp.txt
+		done
+		echo "" > CMakeLists.txt
+		for arg in $@; do
+			if [ $arg == "-c" ]; then
+				continue
+			fi
+			echo "add_executable("$arg" "$arg".cpp)" >> CMakeLists.txt
+			echo "target_link_libraries("$arg" \${OpenCV_LIBS})" >> CMakeLists.txt
+		done
+		cd ..
+	fi
 	mkdir -p build
 	cd build
 	echo " Building project..."
@@ -12,14 +29,19 @@ then
 	echo " Compiling project..."
 	make
 	cd ..
-	while getopts ":c" opt; do
-		case $opt in
-			c)
-			echo " Cleaning up..." >&2
-			rm -rf build
-			;;
-		esac
-	done
+	if [ $# -gt 1 ] || [ $1 != "-c" ]; then
+		cd src
+		echo "" > CMakeLists.txt
+		for line in $lines; do
+			echo $line >> CMakeLists.txt
+		done
+		rm -rf CMakeListsTemp.txt
+		cd ..
+	fi
+	if [ $# -ge 1 ] && [ $1 == "-c" ]; then
+		echo " Cleaning up..." >&2
+		rm -rf build
+	fi
 	echo " Done!"
 else
 	echo " Error: The source directory \""$PWD"\" does not appear to contain CMakeLists.txt."

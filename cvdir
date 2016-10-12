@@ -38,8 +38,9 @@ do
 	echo "INCLUDE_DIRECTORIES( \${OpenCV_INCLUDE_DIR} )" >> "CMakeLists.txt"
 	echo "ADD_SUBDIRECTORY( src )" >> "CMakeLists.txt"
 	cd src
-	echo "add_executable( phldr phldr.cpp )" > "CMakeListss.txt"
+	echo "add_executable( phldr phldr.cpp )" > "CMakeLists.txt"
 	echo "target_link_libraries( phldr \${OpenCV_LIBS} )" >> "CMakeLists.txt"
+	echo "#" >> "CMakeLists.txt"
 	cd ../..
 done
 echo " Directory(ies) successfully created and populated!"
