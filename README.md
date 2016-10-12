@@ -64,3 +64,5 @@ Home Dir (eg. Aula1)
 * CalcGrad
 	- Read video filter, applying one of several gradient calculators, displaying the result.
 	- The gradient calculator are based in the first or second image derivatives.
+* Canny
+	- Uses the Canny algorythm to detect edges of a video feed.
