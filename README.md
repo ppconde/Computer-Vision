@@ -65,4 +65,6 @@ Home Dir (eg. Aula1)
 	- Read video filter, applying one of several gradient calculators, displaying the result.
 	- The gradient calculator are based in the first or second image derivatives.
 * Canny
-	- Uses the Canny algorythm to detect edges of a video feed.
+	- Uses the Canny's algorythm to detect edges of a video feed.
+* CornerDetect
+	- Uses the Harris' algorythm to detect corners on an image provided by a camera.
