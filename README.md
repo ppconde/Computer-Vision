@@ -5,7 +5,7 @@
 
 This repository is destined to be used in the development of projects and exercises associated with the subject Computer Vision, taught at Universidade de Aveiro, Portugal.
 
-These projects use C++ as a programming language, taking advantage of a extensive function library used specifically for computer vision, OpenCV.
+These projects use C++ as a programming language, taking advantage of an extensive function library used specifically for computer vision, OpenCV.
 
 The folders are organized as follows:
 ```
