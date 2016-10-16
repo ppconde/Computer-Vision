@@ -5,7 +5,7 @@
 
 This repository is destined to be used in the development of projects and exercises associated with the subject Computer Vision, taught at Universidade de Aveiro, Portugal.
 
-These projects use C++ as a programming language, taking advantage of a extensive function library used specifically for computer vision, OpenCV.
+These projects use C++ as a programming language, taking advantage of an extensive function library used specifically for computer vision, OpenCV.
 
 The folders are organized as follows:
 ```
@@ -64,3 +64,7 @@ Home Dir (eg. Aula1)
 * CalcGrad
 	- Read video filter, applying one of several gradient calculators, displaying the result.
 	- The gradient calculator are based in the first or second image derivatives.
+* Canny
+	- Uses the Canny's algorythm to detect edges of a video feed.
+* CornerDetect
+	- Uses the Harris' algorythm to detect corners on an image provided by a camera.

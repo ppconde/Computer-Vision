@@ -1,11 +1,12 @@
 #include <opencv2/opencv.hpp>
 #include <iostream>
+#include <string>
 
 using namespace cv;
 using namespace std;
 
 int main() {
-	char* windowName;
+	string windowName;
 	int type;
 	int ksize;
 	int scale = 1;
