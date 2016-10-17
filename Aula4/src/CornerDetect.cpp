@@ -38,7 +38,7 @@ void cornerDetect(int, void*) {
 int main() {
 	//opens default camera
 	VideoCapture cap(0);
-	
+
 	//check if success
 	if (!cap.isOpened()) return -1;
 
@@ -61,7 +61,7 @@ int main() {
 
 	//creates trackbar for user input
 	createTrackbar("Threshold:", "Corner Detection", &thresh, maxThresh, cornerDetect);
-		
+
 	//uses CannyThresh function, declared above
 	cornerDetect(0, 0);
 

@@ -32,7 +32,7 @@ void CannyThresh(int, void*) {
 int main() {
 	//opens default camera
 	VideoCapture cap(0);
-	
+
 	//check if success
 	if (!cap.isOpened()) return -1;
 
@@ -59,7 +59,7 @@ int main() {
 		//creates trackbar for user input
 		createTrackbar("Min Threshold:", "Canny Edge Detection", &lowThresh, maxLowThresh, CannyThresh);
 		createTrackbar("Thresh Ratio:", "Canny Edge Detection", &ratio, maxRatio, CannyThresh);
-		
+
 		//uses CannyThresh function, declared above
 		CannyThresh(0, 0);
 
