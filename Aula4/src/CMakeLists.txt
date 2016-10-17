@@ -1,6 +1,6 @@
 add_executable( HoughCircle HoughCircle.cpp )
 target_link_libraries( HoughCircle ${OpenCV_LIBS} )
->>>>>>> ef05802431a25106f7e125f12b2a4526cf74d9d6
+
 add_executable( HoughLine HoughLine.cpp )
 target_link_libraries( HoughLine ${OpenCV_LIBS} )
 
