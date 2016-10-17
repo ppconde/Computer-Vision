@@ -15,7 +15,8 @@ int main(int argc, char** argv)
   src = imread( argv[1], 1 );
 
   if( !src.data )
-    { return -1; }
+    { cout << " Image not detected. Please use image name as argument if that's the case." << endl;
+      return -1; }
 
   /// Convert it to gray
   cvtColor( src, src_gray, CV_BGR2GRAY );
