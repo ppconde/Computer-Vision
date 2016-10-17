@@ -68,3 +68,9 @@ Home Dir (eg. Aula1)
 	- Uses the Canny's algorythm to detect edges of a video feed.
 * CornerDetect
 	- Uses the Harris' algorythm to detect corners on an image provided by a camera.
+* HoughCircle
+	- Detects circles in a provided image, using the Hough Circle Transform.
+	- Detected circles are displayed in red, with its centers in green.
+* HoughLine
+	- Detects lines in a provided image, using the Hough Line Transform.
+	- Detected lines are displayed in red.
