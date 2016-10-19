@@ -74,3 +74,5 @@ Home Dir (eg. Aula1)
 * HoughLine
 	- Detects lines in a provided image, using the Hough Line Transform.
 	- Detected lines are displayed in red.
+* Contours
+	- Alternative method to find lines and circles in a provided image.
