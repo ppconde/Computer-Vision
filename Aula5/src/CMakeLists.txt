@@ -1,3 +1,3 @@
-add_executable( phldr phldr.cpp )
-target_link_libraries( phldr ${OpenCV_LIBS} )
+ADD_EXECUTABLE( CameraCalib CameraCalib.cpp )
+TARGET_LINK_LIBRARIES( CameraCalib ${OpenCV_LIBS} )
 #
