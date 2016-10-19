@@ -119,8 +119,22 @@ int main(int argc, char **argv) {
     fs.release();
 
     //draw points projection in image
-    for () {
-        
+    vector<Point3f> objectPoints;
+
+    objectPoints.push_back(Point3f(0, 0, 0));
+    objectPoints.push_back(Point3f(0, 0, 1));
+
+    vector<Point2f> imagePoints;
+  
+
+    for (i = 0; i < n_boards; i++) {
+        //reads image
+        sprintf(filename,"img/left%02d.jpg",i+1);
+        image = imread(filename, CV_LOAD_IMAGE_COLOR);
+
+        projectPoints(objectPoints, rvecs.at(i), tvecs.at(i), intrinsicMatrix, distCoeffs, imagePoints);
+        line(image, Point(imagePoints.at(0)), Point(imagePoints.at(1)), Scalar(255, 0, 0), 2, 8);
+        imshow("Output", image);
 
         waitKey(0);
     }
