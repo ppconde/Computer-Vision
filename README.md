@@ -76,3 +76,9 @@ Home Dir (eg. Aula1)
 	- Detected lines are displayed in red.
 * Contours
 	- Alternative method to find lines and circles in a provided image.
+
+## Aula 5
+* CameraCalib
+	- Calibrates camera, using images or a video feed containing a chessboard pattern.
+	- Calculates the intrinsic camera matrix, distortion coefficients and translational and rotational transformation matrixes of points in the image.
+	- Stores calibration information in an external XML file called "camParams-xml".
