@@ -24,7 +24,7 @@ int FindAndDisplayChessboard(Mat image, int wBoard, int hBoard, vector<Point2f> 
     
     //draws results
     if (found) {
-	   drawChessboardCorners(image, boardSize, Mat(*corners), found);
+        drawChessboardCorners(image, boardSize, Mat(*corners), found);
     }
 
     imshow("Calibration", image);
@@ -111,7 +111,7 @@ int main(int argc, char **argv) {
                 //extracts camera calibration params
                 calibrateCamera(objChessPoints, imgChessPoints, image.size(), intrinsicMatrix, distCoeffs, rvecs, tvecs, 0);
             
-                objDisplay = imread(filename, CV_LOAD_IMAGE_COLOR);
+                cap >> objDisplay;
 
                 projectPoints(objCoordPoints, rvecs.at(n), tvecs.at(n), intrinsicMatrix, distCoeffs, imgCoordPoints);
                 line(objDisplay, Point(imgCoordPoints.at(0)), Point(imgCoordPoints.at(1)), Scalar(0, 0, 255), 2, 8);
@@ -123,7 +123,7 @@ int main(int argc, char **argv) {
                 n++;
             }
             else {
-                objDisplay = imread(filename, CV_LOAD_IMAGE_COLOR);
+                cap >> objDisplay;
                 imshow("Output", objDisplay);
             }
 
