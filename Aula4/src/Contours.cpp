@@ -30,7 +30,7 @@ int main( int argc, char** argv )
   namedWindow( source_window, CV_WINDOW_AUTOSIZE );
   imshow( source_window, src );
 
-  createTrackbar( " Threshold:", "Source", &thresh, max_thresh, thresh_callback );
+  createTrackbar( " Canny thresh:", "Source", &thresh, max_thresh, thresh_callback );
   thresh_callback( 0, 0 );
 
   waitKey(0);
@@ -40,34 +40,21 @@ int main( int argc, char** argv )
 /** @function thresh_callback */
 void thresh_callback(int, void* )
 {
-  Mat threshold_output;
+  Mat canny_output;
   vector<vector<Point> > contours;
   vector<Vec4i> hierarchy;
 
-  /// Detect edges using Threshold
-  threshold( src_gray, threshold_output, thresh, 255, THRESH_BINARY );
+  /// Detect edges using canny
+  Canny( src_gray, canny_output, thresh, thresh*2, 3 );
   /// Find contours
-  findContours( threshold_output, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
+  findContours( canny_output, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
 
-  /// Approximate contours to polygons + get bounding rects and circles
-  vector<vector<Point> > contours_poly( contours.size() );
-  vector<Rect> boundRect( contours.size() );
-  vector<Point2f>center( contours.size() );
-  vector<float>radius( contours.size() );
-
-  for( int i = 0; i < contours.size(); i++ )
-     { approxPolyDP( Mat(contours[i]), contours_poly[i], 3, true );
-       minEnclosingCircle( (Mat)contours_poly[i], center[i], radius[i] );
-     }
-
-
-  /// Draw polygonal contour + bonding rects + circles
-  Mat drawing = Mat::zeros( threshold_output.size(), CV_8UC3 );
+  /// Draw contours
+  Mat drawing = Mat::zeros( canny_output.size(), CV_8UC3 );
   for( int i = 0; i< contours.size(); i++ )
      {
        Scalar color = Scalar( rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255) );
-       drawContours( drawing, contours_poly, i, color, 1, 8, vector<Vec4i>(), 0, Point() );
-       circle( drawing, center[i], (int)radius[i], color, 2, 8, 0 );
+       drawContours( drawing, contours, i, color, 2, 8, hierarchy, 0, Point() );
      }
 
   /// Show in a window
