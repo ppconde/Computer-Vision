@@ -79,7 +79,6 @@ int main(int argc, char **argv) {
 
     //creates vector with preliminary coordinates of points
     vector<Point3f> obj;
-
     for(int i = 0; i < boardSize; i++) {
         obj.push_back(Point3f(float(i/wBoard), float(i%wBoard), 0.0));
     }
@@ -196,42 +195,49 @@ int main(int argc, char **argv) {
         fs["distCoeffs"] >> distCoeffs;
         fs.release();
 
-        //reads image
-        int n;
-        cout << " Choose image number (1 to 10): ";
-        cin >> n;
-        cout << endl;
-        sprintf(filename, "img/%02d.jpg", n);
-        cout << " Reading \"" << filename << "\"" << endl;
-        image = imread(filename, CV_LOAD_IMAGE_COLOR);
+        
+        for (int i = 0; i < nBoards; i++) {
+            //reads image
+            sprintf(filename, "img/%02d.jpg", i + 1);
+            cout << " Reading \"" << filename << "\"" << endl;
+            image = imread(filename, CV_LOAD_IMAGE_COLOR);
 
-        if(!image.data) {
-            cout << " Could not load image file: " << filename << endl;
-            return -1;
+            if(!image.data) {
+                cout << " Could not load image file: " << filename << endl;
+                return -1;
+            }
+
+            //finds and displays corners
+            cornerCount = FindAndDisplayChessboard(image, wBoard, hBoard, &corners);
         }
-
-        //finds and displays corners
-        cornerCount = FindAndDisplayChessboard(image, wBoard, hBoard, &corners);
+        
 
         if (cornerCount == boardSize) {
             //transfers data to objects' display vectors
             imgChessPoints.push_back(corners);
             objChessPoints.push_back(obj);
 
-            //extracts rotation and translation vectors
-            solvePnP(objChessPoints, imgChessPoints, intrinsicMatrix, distCoeffs, rvecs, tvecs);
+            for (int i = 0; i < nBoards; i++) {
+                Mat rvec, tvec;
 
-            objDisplay = imread(filename, CV_LOAD_IMAGE_COLOR);
+                //extracts rotation and translation vectors
+                solvePnP(objChessPoints.at(i), imgChessPoints.at(i), intrinsicMatrix, distCoeffs, rvec, tvec);
 
-            projectPoints(objCoordPoints, rvecs.at(0), tvecs.at(0), intrinsicMatrix, distCoeffs, imgCoordPoints);
-            line(objDisplay, Point(imgCoordPoints.at(0)), Point(imgCoordPoints.at(1)), Scalar(0, 0, 255), 2, 8);
-            line(objDisplay, Point(imgCoordPoints.at(0)), Point(imgCoordPoints.at(2)), Scalar(0, 0, 255), 2, 8);
-            line(objDisplay, Point(imgCoordPoints.at(0)), Point(imgCoordPoints.at(3)), Scalar(0, 0, 255), 2, 8);
+                sprintf(filename, "img/%02d.jpg", i + 1);
+                cout << " Reading \"" << filename << "\"" << endl;
+                objDisplay = imread(filename, CV_LOAD_IMAGE_COLOR);
 
-            imshow("Output", objDisplay);
+                projectPoints(objCoordPoints, rvec, tvec, intrinsicMatrix, distCoeffs, imgCoordPoints);
+                line(objDisplay, Point(imgCoordPoints.at(0)), Point(imgCoordPoints.at(1)), Scalar(0, 0, 255), 2, 8);
+                line(objDisplay, Point(imgCoordPoints.at(0)), Point(imgCoordPoints.at(2)), Scalar(0, 0, 255), 2, 8);
+                line(objDisplay, Point(imgCoordPoints.at(0)), Point(imgCoordPoints.at(3)), Scalar(0, 0, 255), 2, 8);
+
+                imshow("Output", objDisplay);
+
+                waitKey(0);
+            }  
         }
         else {
-            objDisplay = imread(filename, CV_LOAD_IMAGE_COLOR);
             imshow("Output", objDisplay);
         }
 
