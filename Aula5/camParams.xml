@@ -5,7 +5,7 @@
   <cols>3</cols>
   <dt>f</dt>
   <data>
-    0. 0. 0. 0. 7.14498994e-38 0. 1.35925951e-43 0. 7.14509756e-38</data></cameraMatrix>
+    .Nan 0. 0. 0. 0. 0. 0. 0. 3.68924443e-38</data></cameraMatrix>
 <distCoeffs type_id="opencv-matrix">
   <rows>0</rows>
   <cols>0</cols>

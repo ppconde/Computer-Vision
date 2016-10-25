@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
     char filename[200];
 
     //chessboard properties
-    int nBoards = 13;                   //number of images
+    int nBoards = 10;                   //number of images
     int wBoard = 9;
     int hBoard = 6;
     int boardSize = wBoard * hBoard;    //size of board
@@ -72,6 +72,7 @@ int main(int argc, char **argv) {
     system("clear");
     cout << endl << "--------------------" << endl;
     cout << " Camera Calibration " << endl;
+    cout << "--------------------" << endl << endl;
     cout << " Choose type of calibration [Internal = 0, External = 1]: ";
     cin >> external;
     cout << endl;
@@ -79,139 +80,163 @@ int main(int argc, char **argv) {
     //creates vector with preliminary coordinates of points
     vector<Point3f> obj;
 
-    for(int i = 0; i < boardSize; i++)
-    {
+    for(int i = 0; i < boardSize; i++) {
         obj.push_back(Point3f(float(i/wBoard), float(i%wBoard), 0.0));
     }
 
-    if(!external)
-    {
-          system("clear");                    //clears terminal window
-          cout << endl << "--------------------" << endl;
-          cout << " Camera Calibration " << endl;
-          cout << "--------------------" << endl << endl;
-          cout << " Choose calibration method [still images = 0, video feed = 1]: ";
-          cin >> type;
-          cout << endl;
-          if (type)
-          {
-              int n = 0;
+    if(!external) {
+        cout << " Choose calibration method [still images = 0, video feed = 1]: ";
+        cin >> type;
+        cout << endl;
 
-              //opens default camera
-              VideoCapture cap(0);
+        if (type) {
+            int n = 0;
 
-              //check if success
-              if (!cap.isOpened())
-              {
-                  cout << " Could not read video feed." << endl;
-                  return -1;
-              }
+            //opens default camera
+            VideoCapture cap(0);
 
-              //finds and displays chessboard points from video
-              for(;;)
-              {
-                  cap >> image;
+            //check if success
+            if (!cap.isOpened()) {
+                cout << " Could not read video feed." << endl;
+                return -1;
+            }
 
-                  //finds and displays corners
-                  cornerCount = FindAndDisplayChessboard(image, wBoard, hBoard, &corners);
+            //finds and displays chessboard points from video
+            for(;;) {
+                cap >> image;
 
-                  //transfers data to objects display vectors
-                  if (cornerCount == boardSize)
-                  {
-                      imgChessPoints.push_back(corners);
-                      objChessPoints.push_back(obj);
+                //finds and displays corners
+                cornerCount = FindAndDisplayChessboard(image, wBoard, hBoard, &corners);
 
-                      //extracts camera calibration params
-                      calibrateCamera(objChessPoints, imgChessPoints, image.size(), intrinsicMatrix, distCoeffs, rvecs, tvecs, 0);
+                //transfers data to objects display vectors
+                if (cornerCount == boardSize) {
+                    imgChessPoints.push_back(corners);
+                    objChessPoints.push_back(obj);
 
-                      cap >> objDisplay;
+                    //extracts camera calibration params
+                    calibrateCamera(objChessPoints, imgChessPoints, image.size(), intrinsicMatrix, distCoeffs, rvecs, tvecs, 0);
 
-                      projectPoints(objCoordPoints, rvecs.at(n), tvecs.at(n), intrinsicMatrix, distCoeffs, imgCoordPoints);
-                      line(objDisplay, Point(imgCoordPoints.at(0)), Point(imgCoordPoints.at(1)), Scalar(0, 0, 255), 2, 8);
-                      line(objDisplay, Point(imgCoordPoints.at(0)), Point(imgCoordPoints.at(2)), Scalar(0, 0, 255), 2, 8);
-                      line(objDisplay, Point(imgCoordPoints.at(0)), Point(imgCoordPoints.at(3)), Scalar(0, 0, 255), 2, 8);
+                    cap >> objDisplay;
 
-                      imshow("Output", objDisplay);
+                    projectPoints(objCoordPoints, rvecs.at(n), tvecs.at(n), intrinsicMatrix, distCoeffs, imgCoordPoints);
+                    line(objDisplay, Point(imgCoordPoints.at(0)), Point(imgCoordPoints.at(1)), Scalar(0, 0, 255), 2, 8);
+                    line(objDisplay, Point(imgCoordPoints.at(0)), Point(imgCoordPoints.at(2)), Scalar(0, 0, 255), 2, 8);
+                    line(objDisplay, Point(imgCoordPoints.at(0)), Point(imgCoordPoints.at(3)), Scalar(0, 0, 255), 2, 8);
 
-                      n++;
-                  }
-                  else
-                  {
-                      cap >> objDisplay;
-                      imshow("Output", objDisplay);
-                  }
+                    imshow("Output", objDisplay);
 
-                  if (waitKey(5) >= 0) break;
-              }
-          }
-          else
-          {
-              //finds and displays chessboard points
-              for (int i = 0; i < nBoards; i++)
-              {
-                  //reads image
-                  sprintf(filename, "img/%02d.jpg", i + 1);
-                  cout << " Reading " << filename << endl;
-                  image = imread(filename, CV_LOAD_IMAGE_COLOR);
+                    n++;
+                }
+                else {
+                    cap >> objDisplay;
+                    imshow("Output", objDisplay);
+                }
 
-                  if(!image.data)
-                  {
-                      cout << " Could not load image file: " << filename << endl;
-                      return -1;
-                  }
+                if (waitKey(5) >= 0) break;
+            }
+        }
+        else {
+            //finds and displays chessboard points
+            for (int i = 0; i < nBoards; i++) {
+                //reads image
+                sprintf(filename, "img/%02d.jpg", i + 1);
+                cout << " Reading \"" << filename << "\"" << endl;
+                image = imread(filename, CV_LOAD_IMAGE_COLOR);
 
-                  //finds and displays corners
-                  cornerCount = FindAndDisplayChessboard(image, wBoard, hBoard, &corners);
+                if(!image.data) {
+                    cout << " Could not load image file: " << filename << endl;
+                    return -1;
+                }
 
-                  //transfers data to objects display vectors
-                  if (cornerCount == boardSize)
-                  {
-                      imgChessPoints.push_back(corners);
-                      objChessPoints.push_back(obj);
+                //finds and displays corners
+                cornerCount = FindAndDisplayChessboard(image, wBoard, hBoard, &corners);
 
-                      //extracts camera calibration params
-                      calibrateCamera(objChessPoints, imgChessPoints, image.size(), intrinsicMatrix, distCoeffs, rvecs, tvecs, 0);
+                //transfers data to objects display vectors
+                if (cornerCount == boardSize) {
+                    imgChessPoints.push_back(corners);
+                    objChessPoints.push_back(obj);
 
-                      objDisplay = imread(filename, CV_LOAD_IMAGE_COLOR);
+                    //extracts camera calibration params
+                    calibrateCamera(objChessPoints, imgChessPoints, image.size(), intrinsicMatrix, distCoeffs, rvecs, tvecs, 0);
 
-                      projectPoints(objCoordPoints, rvecs.at(i), tvecs.at(i), intrinsicMatrix, distCoeffs, imgCoordPoints);
-                      line(objDisplay, Point(imgCoordPoints.at(0)), Point(imgCoordPoints.at(1)), Scalar(0, 0, 255), 2, 8);
-                      line(objDisplay, Point(imgCoordPoints.at(0)), Point(imgCoordPoints.at(2)), Scalar(0, 0, 255), 2, 8);
-                      line(objDisplay, Point(imgCoordPoints.at(0)), Point(imgCoordPoints.at(3)), Scalar(0, 0, 255), 2, 8);
+                    objDisplay = imread(filename, CV_LOAD_IMAGE_COLOR);
 
-                      imshow("Output", objDisplay);
-                  }
-                  else
-                  {
-                      objDisplay = imread(filename, CV_LOAD_IMAGE_COLOR);
-                      imshow("Output", objDisplay);
-                  }
+                    projectPoints(objCoordPoints, rvecs.at(i), tvecs.at(i), intrinsicMatrix, distCoeffs, imgCoordPoints);
+                    line(objDisplay, Point(imgCoordPoints.at(0)), Point(imgCoordPoints.at(1)), Scalar(0, 0, 255), 2, 8);
+                    line(objDisplay, Point(imgCoordPoints.at(0)), Point(imgCoordPoints.at(2)), Scalar(0, 0, 255), 2, 8);
+                    line(objDisplay, Point(imgCoordPoints.at(0)), Point(imgCoordPoints.at(3)), Scalar(0, 0, 255), 2, 8);
 
-                  waitKey(0);
-              }
-          }
+                    imshow("Output", objDisplay);
+                }
+                else {
+                    objDisplay = imread(filename, CV_LOAD_IMAGE_COLOR);
+                    imshow("Output", objDisplay);
+                }
+
+                waitKey(0);
+            }
+        }
+
+        //exports camera calibration params to external XML file
+        FileStorage fs("camParams.xml", FileStorage::WRITE);
+        fs << "cameraMatrix" << intrinsicMatrix << "distCoeffs" << distCoeffs;
+        fs.release();
 
     }
-    else
-    {
-            // load Matrixes
-      Mat intrinsic_matrix;
-      Mat distortion_coeffs;
-      FileStorage fs("../camParams.xml", FileStorage::READ);
-      if (!fs.isOpened())
-      {
-      cerr << "Failed to open " << filename << endl;
-      return 1;
-      }
-      fs["cameraMatrix"] >> intrinsic_matrix;
-      fs["distCoeffs"] >> distortion_coeffs;
-      fs.release();
-    }
+    else {
+        // load Matrixes
+        FileStorage fs("camParams.xml", FileStorage::READ);
 
-    //exports camera calibration params to extrenal XML file
-    FileStorage fs("camParams.xml", FileStorage::WRITE);
-    fs << "cameraMatrix" << intrinsicMatrix << "distCoeffs" << distCoeffs;
-    fs.release();
+        if (!fs.isOpened()) {
+            cerr << "Failed to open \"camParams.xml\"" << endl;
+            return 1;
+        }
+
+        fs["cameraMatrix"] >> intrinsicMatrix;
+        fs["distCoeffs"] >> distCoeffs;
+        fs.release();
+
+        //reads image
+        int n;
+        cout << " Choose image number (1 to 10): ";
+        cin >> n;
+        cout << endl;
+        sprintf(filename, "img/%02d.jpg", n);
+        cout << " Reading \"" << filename << "\"" << endl;
+        image = imread(filename, CV_LOAD_IMAGE_COLOR);
+
+        if(!image.data) {
+            cout << " Could not load image file: " << filename << endl;
+            return -1;
+        }
+
+        //finds and displays corners
+        cornerCount = FindAndDisplayChessboard(image, wBoard, hBoard, &corners);
+
+        if (cornerCount == boardSize) {
+            //transfers data to objects' display vectors
+            imgChessPoints.push_back(corners);
+            objChessPoints.push_back(obj);
+
+            //extracts rotation and translation vectors
+            solvePnP(objChessPoints, imgChessPoints, intrinsicMatrix, distCoeffs, rvecs, tvecs);
+
+            objDisplay = imread(filename, CV_LOAD_IMAGE_COLOR);
+
+            projectPoints(objCoordPoints, rvecs.at(0), tvecs.at(0), intrinsicMatrix, distCoeffs, imgCoordPoints);
+            line(objDisplay, Point(imgCoordPoints.at(0)), Point(imgCoordPoints.at(1)), Scalar(0, 0, 255), 2, 8);
+            line(objDisplay, Point(imgCoordPoints.at(0)), Point(imgCoordPoints.at(2)), Scalar(0, 0, 255), 2, 8);
+            line(objDisplay, Point(imgCoordPoints.at(0)), Point(imgCoordPoints.at(3)), Scalar(0, 0, 255), 2, 8);
+
+            imshow("Output", objDisplay);
+        }
+        else {
+            objDisplay = imread(filename, CV_LOAD_IMAGE_COLOR);
+            imshow("Output", objDisplay);
+        }
+
+        waitKey(0);
+    }
 
     return 0;
 }
