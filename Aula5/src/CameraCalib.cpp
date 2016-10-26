@@ -209,7 +209,7 @@ int main(int argc, char **argv) {
 
             //finds and displays corners
             cornerCount = FindAndDisplayChessboard(image, wBoard, hBoard, &corners);
-        
+
             if (cornerCount == boardSize) {
                 //transfers data to objects' display vectors
                 imgChessPoints.push_back(corners);
@@ -218,17 +218,16 @@ int main(int argc, char **argv) {
                 Mat rvec, tvec;
 
                 //extracts rotation and translation vectors
-                solvePnP(objChessPoints.at(i), imgChessPoints.at(i), intrinsicMatrix, distCoeffs, rvec, tvec);
+                solvePnP(obj, corners, intrinsicMatrix, distCoeffs, rvec, tvec);
 
-                
                 objDisplay = imread(filename, CV_LOAD_IMAGE_COLOR);
 
                 projectPoints(objCoordPoints, rvec, tvec, intrinsicMatrix, distCoeffs, imgCoordPoints);
                 line(objDisplay, Point(imgCoordPoints.at(0)), Point(imgCoordPoints.at(1)), Scalar(0, 0, 255), 2, 8);
                 line(objDisplay, Point(imgCoordPoints.at(0)), Point(imgCoordPoints.at(2)), Scalar(0, 0, 255), 2, 8);
                 line(objDisplay, Point(imgCoordPoints.at(0)), Point(imgCoordPoints.at(3)), Scalar(0, 0, 255), 2, 8);
-
-                imshow("Output", objDisplay);        
+                imshow("Output", objDisplay);
+                waitKey(-1);
             }
             else {
                 imshow("Output", objDisplay);
