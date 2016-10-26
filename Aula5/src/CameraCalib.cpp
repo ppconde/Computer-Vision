@@ -195,7 +195,7 @@ int main(int argc, char **argv) {
         fs["distCoeffs"] >> distCoeffs;
         fs.release();
 
-        
+
         for (int i = 0; i < nBoards; i++) {
             //reads image
             sprintf(filename, "img/%02d.jpg", i + 1);
@@ -210,7 +210,7 @@ int main(int argc, char **argv) {
             //finds and displays corners
             cornerCount = FindAndDisplayChessboard(image, wBoard, hBoard, &corners);
         }
-        
+
 
         if (cornerCount == boardSize) {
             //transfers data to objects' display vectors
@@ -235,7 +235,7 @@ int main(int argc, char **argv) {
                 imshow("Output", objDisplay);
 
                 waitKey(0);
-            }  
+            }
         }
         else {
             imshow("Output", objDisplay);

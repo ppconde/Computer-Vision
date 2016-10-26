@@ -3,12 +3,16 @@
 <cameraMatrix type_id="opencv-matrix">
   <rows>3</rows>
   <cols>3</cols>
-  <dt>f</dt>
+  <dt>d</dt>
   <data>
-    .Nan 0. 0. 0. 0. 0. 0. 0. 3.68924443e-38</data></cameraMatrix>
+    7.7186058869960891e+02 0. 3.4951404035537041e+02 0.
+    7.6615303110737261e+02 2.1784219691690652e+02 0. 0. 1.</data></cameraMatrix>
 <distCoeffs type_id="opencv-matrix">
-  <rows>0</rows>
-  <cols>0</cols>
-  <dt>u</dt>
-  <data></data></distCoeffs>
+  <rows>1</rows>
+  <cols>5</cols>
+  <dt>d</dt>
+  <data>
+    4.3096062916044914e-01 -2.8383093722601629e+00
+    -1.0837867683586203e-02 2.7649521194710511e-02
+    6.6148187457273435e+00</data></distCoeffs>
 </opencv_storage>
