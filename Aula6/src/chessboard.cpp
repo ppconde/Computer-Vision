@@ -1,109 +1,92 @@
-/***********************************************************************************
-Name:           chessboard.cpp
-Revision:
-Date:           05-10-2013
-Author:         Paulo Dias
-Comments:       ChessBoard Tracking
-
-
-images
-Revision:
-Libraries:
-Notes:          Code generated with Visual Studio 2013 Intel OpenCV 2.4.8 libraries 
-***********************************************************************************/
 #include <iostream>
 #include <vector>
-
 #include <stdio.h>
 
-// OpenCV Includes
-#include <opencv2/core/core.hpp>        
-#include <opencv2/highgui/highgui.hpp>  
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
 #include <opencv2/calib3d/calib3d.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
+using namespace cv;
+using namespace std;
 
-// Function FindAndDisplayChessboard
-// find corners in a cheesboard with board_w x board_h dimensions
-// Display the corners in image and return number of detected corners
-int FindAndDisplayChessboard(cv::Mat image,int board_w,int board_h, std::vector<cv::Point2f> *corners)
-{
-  int board_size = board_w * board_h;
-  CvSize board_sz = cvSize(board_w,board_h);
+int FindAndDisplayChessboard(Mat image, int wBoard, int hBoard, vector<Point2f> *corners) {
+    // This function finds corners in a chessboard with wBoard * hBoard dims,
+    //displays them in image and returns number of detected corners.
 
-  cv::Mat grey_image;
+    Size boardSize = Size(wBoard, hBoard);
 
-  cv::cvtColor(image, grey_image, CV_BGR2GRAY);
-  
-  // find chessboard corners
-  bool found = cv::findChessboardCorners(grey_image, board_sz, *corners,0);
-  
-  // Draw results
-  if (true)
-  {
-	cv::drawChessboardCorners(image, board_sz, cv::Mat(*corners), found);
-	cv::imshow("Calibration",image);
-    //printf("\n Number of corners: %d",corners->size());
-	cv::waitKey(0); 
-  }
-  return corners->size();
+    Mat grayImage;
+    cvtColor(image, grayImage, CV_BGR2GRAY);
+
+    //finds chessboard corners
+    bool found = findChessboardCorners(grayImage, boardSize, *corners, 0);
+
+    //draws results
+    if (found) {
+        drawChessboardCorners(image, boardSize, Mat(*corners), found);
+    }
+
+    imshow("Calibration", image);
+    cout << " Number of corners: " << corners -> size() << endl;
+
+    return corners -> size();
 }
 
-int main(int argc, char **argv)
-{
-  // ChessBoard Properties
-  int n_boards = 13; //Number of images
-  int board_w = 9;
-  int board_h = 6;
+int main(int argc, char **argv) {
+    char filename[200];
 
-  int board_sz = board_w * board_h;
+    //chessboard properties
+    int nBoards = 10;                   //number of images
+    int wBoard = 9;
+    int hBoard = 6;
+    int boardSize = wBoard * hBoard;    //size of board
 
-  char filename[200];
+    //chessboard coordinates and image pixels
+    vector<vector<Point3f> > objChessPoints;
+    vector<vector<Point2f> > imgChessPoints;
 
-  // Chessboard coordinates and image pixels
-  std::vector<std::vector<cv::Point3f> > object_points;
-  std::vector<std::vector<cv::Point2f> > image_points;
+    //corners detected in each image
+    vector<Point2f> corners;
+    int cornerCount;
 
-  // Corners detected in each image
-  std::vector<cv::Point2f> corners;
-  
-  int corner_count;
+    Mat image, objDisplay;
 
-  cv::Mat image;
-  int i;
+    //presents user interface
+    system("clear");
+    cout << endl << "------------" << endl;
+    cout << " Chessboard " << endl;
+    cout << "------------" << endl << endl;
 
-  int sucesses = 0;
-	 
-
-  // chessboard coordinates
-  std::vector<cv::Point3f> obj;
-  for(int j=0;j<board_sz;j++)
-    obj.push_back(cv::Point3f(float(j/board_w), float(j%board_w), 0.0));
-  
-  for (i=0;i<n_boards;i++)
-  {
-    // read image 
-    sprintf(filename,"img/left%02d.jpg",i+1);
-    printf("\nReading %s",filename);
-    image = cv::imread(filename, CV_LOAD_IMAGE_COLOR);
-    
-    
-    if(!image.data) 
-    {
-      printf("\nCould not load image file: %s\n",filename);
-	  getchar();
-      return 0;
+    //creates vector with preliminary coordinates of points
+    vector<Point3f> obj;
+    for(int i = 0; i < boardSize; i++) {
+        obj.push_back(Point3f(float(i/wBoard), float(i%wBoard), 0.0));
     }
-    
-	// find and display corners
-    corner_count = FindAndDisplayChessboard(image,board_w,board_h,&corners);
-    
-	if (corner_count == board_w * board_h)
-    {
-      image_points.push_back(corners);
-	  object_points.push_back(obj);
-      sucesses++;
+
+    //finds and displays chessboard points
+    for (int i = 0; i < nBoards; i++) {
+        //reads image
+        sprintf(filename, "img/%02d.jpg", i + 1);
+        cout << " Reading \"" << filename << "\"" << endl;
+        image = imread(filename, CV_LOAD_IMAGE_COLOR);
+
+        if(!image.data) {
+            cout << " Could not load image file: " << filename << endl;
+            return -1;
+        }
+
+        //finds and displays corners
+        cornerCount = FindAndDisplayChessboard(image, wBoard, hBoard, &corners);
+
+        //transfers data to objects display vectors
+        if (cornerCount == boardSize) {
+            imgChessPoints.push_back(corners);
+            objChessPoints.push_back(obj);
+        }
+
+        waitKey(0);
     }
-  }
-  return 0;
+
+    return 0;
 }
