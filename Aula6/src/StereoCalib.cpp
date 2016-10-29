@@ -37,12 +37,12 @@ int FindAndDisplayChessboard(Mat image, int wBoard, int hBoard, vector<Point2f> 
 
 int main(int argc, char **argv) {
     char filename[200];
+    bool set;
 
     //chessboard properties
-    int nBoards = 13;                   //number of images
-    int wBoard = 9;
-    int hBoard = 6;
-    int boardSize = wBoard * hBoard;    //size of board
+    int nBoards;                   //number of images
+    int wBoard;
+    int hBoard;
 
     //matrixes for stereo calibration
     vector<vector<Point2f> > ipts1;
@@ -60,15 +60,30 @@ int main(int argc, char **argv) {
 
     //corners detected in each image
     vector<Point2f> corners;
-    int cornerCount;
 
     Mat image, objDisplay;
 
     //presents user interface
     system("clear");
-    cout << endl << "------------" << endl;
-    cout << " Chessboard " << endl;
-    cout << "------------" << endl << endl;
+    cout << endl << "--------------------" << endl;
+    cout << " Stereo Calibration " << endl;
+    cout << "--------------------" << endl << endl;
+    cout << " Choose set of pictures (1st set = 0, 2nd set = 1) ";
+    cin >> set;
+    cout << endl;
+
+    //chessboard properties' initialization
+    if (set) {
+        nBoards = 31;
+        wBoard = 10;
+        hBoard = 7;
+    }
+    else {
+        nBoards = 13;
+        wBoard = 9;
+        hBoard = 6;
+    }
+    int boardSize = wBoard * hBoard;    //size of board
 
     //creates vector with preliminary coordinates of points
     vector<Point3f> obj;
@@ -80,10 +95,12 @@ int main(int argc, char **argv) {
     for (int i = 0; i < 2*nBoards; i++) {
         //reads image
         if (i < nBoards) {
-            sprintf(filename, "img/left%02d.jpg", i + 1);    
+            if (set) sprintf(filename, "img/StereoL%d.bmp", i + 1);
+            else sprintf(filename, "img/left%02d.jpg", i + 1);    
         }
         else {
-            sprintf(filename, "img/right%02d.jpg", i - nBoards + 1);
+            if (set) sprintf(filename, "img/StereoR%d.bmp", i - nBoards + 1);
+            else sprintf(filename, "img/right%02d.jpg", i - nBoards + 1);
         }
         cout << " Reading \"" << filename << "\"" << endl;
         image = imread(filename, CV_LOAD_IMAGE_COLOR);
@@ -119,8 +136,11 @@ int main(int argc, char **argv) {
     double rms = stereoCalibrate(opts, ipts1, ipts2, camMatrix1, distCoeffs1, camMatrix2, distCoeffs2, image.size(), R, T, E, F, CV_CALIB_SAME_FOCAL_LENGTH, criteria2);
 
     //exports camera calibration params to external XML file
-    FileStorage fs("camParams.xml", FileStorage::WRITE);
+    if (set) sprintf(filename, "camParams2.xml");
+    else sprintf(filename, "camParams1.xml");
+    FileStorage fs(filename, FileStorage::WRITE);
     fs << "camMatrix1" << camMatrix1;
+    fs << "camMatrix2" << camMatrix2;
     fs << "distCoeffs1" << distCoeffs1;
     fs << "distCoeffs2" << distCoeffs2;
     fs << "rotation" << R;

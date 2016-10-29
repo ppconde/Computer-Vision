@@ -7,6 +7,13 @@
   <data>
     5.3236470236227001e+02 0. 3.3521917641721899e+02 0.
     5.3234649612096655e+02 2.4113780466256102e+02 0. 0. 1.</data></camMatrix1>
+<camMatrix2 type_id="opencv-matrix">
+  <rows>3</rows>
+  <cols>3</cols>
+  <dt>d</dt>
+  <data>
+    5.3236470236227001e+02 0. 3.3448425093245680e+02 0.
+    5.3234649612096655e+02 2.4197234569068686e+02 0. 0. 1.</data></camMatrix2>
 <distCoeffs1 type_id="opencv-matrix">
   <rows>1</rows>
   <cols>5</cols>
