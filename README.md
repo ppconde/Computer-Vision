@@ -80,5 +80,15 @@ Home Dir (eg. Aula1)
 ## Aula 5
 * CameraCalib
 	- Calibrates camera, using images or a video feed containing a chessboard pattern.
-	- Calculates the intrinsic camera matrix, distortion coefficients and translational and rotational transformation matrixes of points in the image.
-	- Stores calibration information in an external XML file called "camParams-xml".
+	- Stores calibration information in an external XML file called "camParams.xml".
+
+## Aula 6
+* StereoCalib
+	- Calibrates a stereo camera system, using images from each camera which contain chessboard patterns.
+	- Stores calibration data in external XML files.
+* Undistort
+	- Given calibration data from stereo cameras, undistorts the distortion created by the camera lenses.
+	- Displays epipolar lines in the undistorted output images at a point defined by the user (by mouse click).
+* Rectify
+	- Given calibration data from stereo cameras, undistorts and then rectifies the image output.
+	- Displays an horizontal line in the output images for comparison, at a point defined by the user (by mouse click).
