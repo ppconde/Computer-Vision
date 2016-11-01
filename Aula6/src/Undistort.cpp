@@ -93,7 +93,7 @@ int main(int argc, char **argv) {
     cout << endl << "------------------" << endl;
     cout << " Stereo Undistort " << endl;
     cout << "------------------" << endl << endl;
-    cout << " Choose set of pictures (1st set = 0, 2nd set = 1) ";
+    cout << " Choose set of pictures (1st set = 0, 2nd set = 1): ";
     cin >> set;
     cout << endl;
 
@@ -108,7 +108,7 @@ int main(int argc, char **argv) {
 
         sprintf(filename, "camParams1.xml");
     }
-    cout << " Choose pair of pictures [1 - " << nBoards << "] ";
+    cout << " Choose pair of pictures [1 - " << nBoards << "]: ";
 
     //selects pair of images (left and right)
     cin >> pair;
