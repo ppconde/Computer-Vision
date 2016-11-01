@@ -92,3 +92,7 @@ Home Dir (eg. Aula1)
 * Rectify
 	- Given calibration data from stereo cameras, undistorts and then rectifies the image output.
 	- Displays an horizontal line in the output images for comparison, at a point defined by the user (by mouse click).
+
+## PCL
+* WriteToPCD
+	- Writes a random cloud to a PCD file.
