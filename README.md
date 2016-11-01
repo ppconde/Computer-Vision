@@ -28,6 +28,7 @@ Home Dir (eg. Aula1)
 	- Needs to be stored somewhere, symlinked to `/usr/bin` (eg. `ln -s ~/scripts/cvmake /usr/bin/cvmake`) and have its path added in the bash config file for it to work properly (eg. `PATH=~/scripts:$PATH`).
 	- Can be executed by typing `cvmake -c` in the terminal. The argument `-c` is optional and using it cleans the excess files created during the build.
 	- Extra arguments can be given and will be treated as files to be built and compiled (eg. `cvmake -c Hello` will try to search for the source file of the same name, build it and compile it, returning the binary "Hello" and finally cleaning the excess files). By using no extra arguments, the tool will build and compile the source files presented in "CMakeLists".
+	- If the last argument given is `-r`, after a successful build and compilation, the script will attempt to execute the resulting binary from the first argument given, excluding `-c`.
 * cvdir
 	- Shell script that automatically creates directories and populates them with the needed "CMakelists" files.
 	- Needs to be stored somewhere, symlinked to `/usr/bin` (eg. `ln -s ~/scripts/cvdir /usr/bin/cvdir`) and have its path added in the bash config file for it to work properly (eg. `PATH=~/scripts:$PATH`).

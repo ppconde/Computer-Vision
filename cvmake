@@ -4,17 +4,17 @@
 # This only works if ran from the base directory of the project.
 
 if [ -f CMakeLists.txt ]; then
-	if [ $# -gt 1 ] || [ $1 != "-c" ]; then
+	if [ "$#" -gt 1 ] || [ "$1" != "-c" ]; then
 		file=src/CMakeLists.txt
 		IFS=$'\n'
 		lines=`cat $file`
 		echo "" > src/CMakeLists.txt
 		for arg in $@; do
-			if [ $arg == "-c" ]; then
+			if [ $arg == "-c" ] || [ $arg == "-r" ]; then
 				continue
 			fi
 			echo "add_executable("$arg" "$arg".cpp)" >> src/CMakeLists.txt
-			echo "target_link_libraries("$arg" \${OpenCV_LIBS})" >> src/CMakeLists.txt
+			echo "target_link_libraries("$arg" \${OpenCV_LIBS} \${PCL_COMMON_LIBRARIES} \${PCL_IO_LIBRARIES})" >> src/CMakeLists.txt
 		done
 	fi
 	mkdir -p build
@@ -24,17 +24,35 @@ if [ -f CMakeLists.txt ]; then
 	echo " Compiling project..."
 	make
 	cd ..
-	if [ $# -gt 1 ] || [ $1 != "-c" ]; then
+	if [ "$#" -gt 1 ] || [ "$1" != "-c" ]; then
 		echo "" > src/CMakeLists.txt
 		for line in $lines; do
 			echo $line >> src/CMakeLists.txt
 		done
 	fi
-	if [ $# -ge 1 ] && [ $1 == "-c" ]; then
+	if [ "$#" -ge 1 ] && [ "$1" == "-c" ]; then
 		echo " Cleaning up..." >&2
 		rm -rf build
 	fi
 	echo " Done!"
+	for last; do true; done
+	if [ "$last" == "-r" ]; then
+		if [ "$#" -eq 1 ]; then
+			echo " Error: no argument given for binary execution. Execution aborted."
+		elif [ "$#" -eq 2 ] && [ "$1" == '-c' ]; then
+			echo " Error: no argument given for binary execution. Execution aborted."
+		elif [ "$#" -ge 2 ] && [ "$1" != "-c" ]; then
+			if [ "$#" -gt 2 ]; then
+				echo " Warning: more than one argument for binary execution. Running \"$1\"..."
+			fi
+			./bin/$1
+		elif [ "$#" -gt 2 ] && [ "$1" == "-c" ]; then
+			if [ "$#" -gt 3 ]; then
+				echo " Warning: more than one argument for binary execution. Running \"$2\"..."
+			fi
+			./bin/$2
+		fi
+	fi
 else
 	echo " Error: The source directory \""$PWD"\" does not appear to contain CMakeLists.txt."
 fi
