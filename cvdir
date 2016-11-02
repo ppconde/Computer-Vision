@@ -3,12 +3,14 @@
 # This script creates the home directory and all associated folders and 'CMakeLists' files required for the Computer Vision course's exercises.
 # Each home directory created needs to be named as an argument.
 
+#if no args given, aborts folder creation
 if [ $# -eq 0 ];
 then
 	echo " Error: no input arguments given!"
 	exit 1
 fi
 
+#checks if folder is already present
 for n in "$@"
 do
 	if [ -e $n ];
@@ -18,11 +20,15 @@ do
 	fi
 done
 
+#creates folders for each arg and populates them with needed files
 for n in "$@"
 do
+	#creates folder with arg name
 	mkdir $n
 	cd $n
+	#creates subfolder
 	mkdir src bin img
+	#creates "CMakeLists.txt"
 	echo "cmake_minimum_required(VERSION 2.8)" > "CMakeLists.txt"
 	echo "project(ProjectName)" >> "CMakeLists.txt"
 	echo "set(PCL_DIR \"/usr/local/pcl-1.8.0/share/pcl-1.8\")" >> "CMakeLists.txt"
@@ -43,6 +49,7 @@ do
 	echo "add_definitions(\${PCL_DEFINITIONS})" >> "CMakeLists.txt"
 	echo "add_subdirectory(src)" >> "CMakeLists.txt"
 	cd src
+	#creates "src/CMakeLists.txt"
 	echo "#add_executable(phldr phldr.cpp)" > "CMakeLists.txt"
 	echo "#target_link_libraries(phldr \${OpenCV_LIBS} \${PCL_LIBRARIES})" >> "CMakeLists.txt"
 	echo "#" >> "CMakeLists.txt"

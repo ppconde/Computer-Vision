@@ -3,13 +3,18 @@
 # This script builds and compiles source files into an executable.
 # This only works if ran from the base directory of the project.
 
+#checks if "CMakeLists.txt" exists
 if [ -f CMakeLists.txt ]; then
+	#if the # of args is bigger than "1" and the first isn't "-c"
 	if [ "$#" -gt 1 ] || [ "$1" != "-c" ]; then
+		#reads "src/CMakeLists.txt" and stores in var "file"
 		file=src/CMakeLists.txt
 		IFS=$'\n'
 		lines=`cat $file`
+		#writes new "src/CMakeLists.txt" with needed args configurations
 		echo "" > src/CMakeLists.txt
 		for arg in $@; do
+			#ignores "-c" and "-r" args if present
 			if [ $arg == "-c" ] || [ $arg == "-r" ]; then
 				continue
 			fi
@@ -17,26 +22,34 @@ if [ -f CMakeLists.txt ]; then
 			echo "target_link_libraries("$arg" \${OpenCV_LIBS} \${PCL_LIBRARIES})" >> src/CMakeLists.txt
 		done
 	fi
+	#creates folder "build"
 	mkdir -p build
 	cd build
 	echo " Building project..."
+	#builds project
 	cmake ..
 	echo " Compiling project..."
+	#compiles project
 	make
+	#stores "make" output in var "makeerr" (if compilation error, makeerr == 2)
 	makeerr=$?
 	cd ..
+	#restores "src/CMakeLists.txt" by reading "file" and writing contents
 	if [ "$#" -gt 1 ] || [ "$1" != "-c" ]; then
 		echo "" > src/CMakeLists.txt
 		for line in $lines; do
 			echo $line >> src/CMakeLists.txt
 		done
 	fi
+	#deletes "build" folder and all files in it if arg "-c" used
 	if [ "$#" -ge 1 ] && [ "$1" == "-c" ]; then
 		echo " Cleaning up..." >&2
 		rm -rf build
 	fi
 	echo " Done!"
+	#reads last argument
 	for last; do true; done
+	#if last arg is "-r" runs binary after compilation
 	if [ "$last" == "-r" ]; then
 		if [ "$makeerr" -eq 2 ]; then
 			echo " Error: compilation error. Execution aborted."
