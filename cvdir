@@ -43,10 +43,7 @@ do
 	echo "add_subdirectory(src)" >> "CMakeLists.txt"
 	cd src
 	echo "#add_executable(phldr phldr.cpp)" > "CMakeLists.txt"
-	echo "#target_link_libraries(phldr \${OpenCV_LIBS})" >> "CMakeLists.txt"
-	echo "#" >> "CMakeLists.txt"
-	echo "#add_executable(phldr phldr.cpp)" >> "CMakeLists.txt"
-	echo "#target_link_libraries(phldr \${PCL_COMMON_LIBRARIES} \${PCL_IO_LIBRARIES})" >> "CMakeLists.txt"
+	echo "#target_link_libraries(phldr \${OpenCV_LIBS} \${PCL_COMMON_LIBRARIES} \${PCL_IO_LIBRARIES})" >> "CMakeLists.txt"
 	echo "#" >> "CMakeLists.txt"
 	cd ../..
 done
