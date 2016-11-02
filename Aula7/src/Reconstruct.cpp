@@ -33,9 +33,9 @@ int main(int argc, char **argv) {
 
 	//presents user interface
     system("clear");
-    cout << endl << "------------------" << endl;
-    cout << " Stereo Undistort " << endl;
-    cout << "------------------" << endl << endl;
+    cout << endl << "----------------------" << endl;
+    cout << " Image Reconstruction " << endl;
+    cout << "----------------------" << endl << endl;
     cout << " Choose set of pictures (1st set = 0, 2nd set = 1): ";
     cin >> set;
     cout << endl;
@@ -121,7 +121,7 @@ int main(int argc, char **argv) {
     int nDisparities = 16*5;
     int SADWindowSize = 21;
 
-    //applies stereoBM
+    //computes stereo correspondence between rectified images
     Ptr<StereoBM> sbm;
     sbm = StereoBM::create(nDisparities, SADWindowSize);
     sbm -> compute(finalL, finalR, imgDisparity16S);
@@ -130,7 +130,8 @@ int main(int argc, char **argv) {
 
     minMaxLoc(imgDisparity16S, &minVal, &maxVal);
 
-    printf("Min disp: %f Max value: %f \n", minVal, maxVal);
+    cout << "Min value: " << minVal << endl;
+    cout << "Max value: " << maxVal << endl << endl;
 
     //outputs stereoBM result
     imgDisparity16S.convertTo(imgDisparity8U, CV_8UC1, 255/(maxVal - minVal));

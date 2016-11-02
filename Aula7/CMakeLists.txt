@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 project(ProjectName)
+set(PCL_DIR "/usr/local/pcl-1.8.0/share/pcl-1.8")
 message("\n==> Finding 3rd Party Packages")
 find_package(OpenCV REQUIRED)
 find_package(PCL 1.2 REQUIRED)

@@ -94,6 +94,12 @@ Home Dir (eg. Aula1)
 	- Given calibration data from stereo cameras, undistorts and then rectifies the image output.
 	- Displays an horizontal line in the output images for comparison, at a point defined by the user (by mouse click).
 
-## PCL
+## Aula 7
 * WriteToPCD
 	- Writes a random cloud to a PCD file.
+* Reconstruct
+	- Reconstructs the 3D coordinates of a scene contained in an image, using the rectified images taken from a stereo camera system as starting point.
+* ViewCloud
+	- Displays a points' cloud.
+* ViewOpenNI
+	- Displays feed from an OpenNI compatible system.

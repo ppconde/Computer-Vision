@@ -14,7 +14,7 @@ if [ -f CMakeLists.txt ]; then
 				continue
 			fi
 			echo "add_executable("$arg" "$arg".cpp)" >> src/CMakeLists.txt
-			echo "target_link_libraries("$arg" \${OpenCV_LIBS} \${PCL_COMMON_LIBRARIES} \${PCL_IO_LIBRARIES})" >> src/CMakeLists.txt
+			echo "target_link_libraries("$arg" \${OpenCV_LIBS} \${PCL_LIBRARIES})" >> src/CMakeLists.txt
 		done
 	fi
 	mkdir -p build
@@ -23,6 +23,7 @@ if [ -f CMakeLists.txt ]; then
 	cmake ..
 	echo " Compiling project..."
 	make
+	makeerr=$?
 	cd ..
 	if [ "$#" -gt 1 ] || [ "$1" != "-c" ]; then
 		echo "" > src/CMakeLists.txt
@@ -37,7 +38,9 @@ if [ -f CMakeLists.txt ]; then
 	echo " Done!"
 	for last; do true; done
 	if [ "$last" == "-r" ]; then
-		if [ "$#" -eq 1 ]; then
+		if [ "$makeerr" -eq 2 ]; then
+			echo " Error: compilation error. Execution aborted."
+		elif [ "$#" -eq 1 ]; then
 			echo " Error: no argument given for binary execution. Execution aborted."
 		elif [ "$#" -eq 2 ] && [ "$1" == '-c' ]; then
 			echo " Error: no argument given for binary execution. Execution aborted."
