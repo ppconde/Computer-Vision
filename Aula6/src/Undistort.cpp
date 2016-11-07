@@ -58,7 +58,7 @@ void mouseHandlerL(int event, int x, int y, int flags, void* param) {
 }
 
 void mouseHandlerR(int event, int x, int y, int flags, void* param) {
-	// Handles mouse clicking on the right image	
+	// Handles mouse clicking on the right image
 	switch (event) {
 		case CV_EVENT_LBUTTONDOWN:
 			Point selected = Point(x, y);
@@ -67,7 +67,7 @@ void mouseHandlerR(int event, int x, int y, int flags, void* param) {
 			Mat epiImage;
 			computeCorrespondEpilines(ptsr, 2, F, epiImage);
 			drawEpiLines(epiImage, undistImageL, "Undistorted Left");
-			
+
 			break;
 	}
 }
@@ -133,13 +133,13 @@ int main(int argc, char **argv) {
     	sprintf(filename, "img/StereoL%d.bmp", pair);
     	imageL = imread(filename, CV_LOAD_IMAGE_COLOR);
     	sprintf(filename, "img/StereoR%d.bmp", pair);
-    	imageR = imread(filename, CV_LOAD_IMAGE_COLOR);	
+    	imageR = imread(filename, CV_LOAD_IMAGE_COLOR);
     }
     else {
     	sprintf(filename, "img/left%02d.jpg", pair);
     	imageL = imread(filename, CV_LOAD_IMAGE_COLOR);
     	sprintf(filename, "img/right%02d.jpg", pair);
-    	imageR = imread(filename, CV_LOAD_IMAGE_COLOR);    
+    	imageR = imread(filename, CV_LOAD_IMAGE_COLOR);
     }
 
     if (!imageL.data || !imageR.data) {

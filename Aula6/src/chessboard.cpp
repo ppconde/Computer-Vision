@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
     //finds and displays chessboard points
     for (int i = 0; i < nBoards; i++) {
         //reads image
-        sprintf(filename, "img/%02d.jpg", i + 1);
+        sprintf(filename, "img/right%02d.jpg", i + 1);
         cout << " Reading \"" << filename << "\"" << endl;
         image = imread(filename, CV_LOAD_IMAGE_COLOR);
 
