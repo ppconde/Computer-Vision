@@ -8,9 +8,6 @@
 using namespace pcl;
 
 int  main (int argc, char** argv) {
-    //creates new point cloud
-    PointCloud<PointXYZRGB>::Ptr cloud (new PointCloud<PointXYZRGB>);
-
     //presents user interface
     system("clear");
     cout << endl << "-------------" << endl;
@@ -22,10 +19,12 @@ int  main (int argc, char** argv) {
     PointCloud<PointXYZRGB>::Ptr cloud2(new PointCloud<PointXYZRGB>);
 
     //reads files
+    cout << "reading 1" << endl;
     if (io::loadPCDFile<PointXYZRGB> ("img/filt_office1.pcd", *cloud1) == -1) {
         PCL_ERROR ("Couldn't read file.\n");
         return (-1);
     }
+    cout << "reading 2" << endl;
     if (io::loadPCDFile<PointXYZRGB> ("img/filt_office2.pcd", *cloud2) == -1) {
         PCL_ERROR ("Couldn't read file.\n");
         return (-1);
@@ -44,8 +43,9 @@ int  main (int argc, char** argv) {
 
     //displays point cloud (original and aligned)
     visualization::CloudViewer viewer("Simple Cloud Viewer");
-    viewer.showCloud(cloud1);
-    viewer.showCloud(cloudAligned);
+    viewer.showCloud(cloud1, "c1");
+    viewer.showCloud(cloud2, "c2");
+    viewer.showCloud(cloudAligned, "Aligned");
     while (!viewer.wasStopped());
 
     return (0);

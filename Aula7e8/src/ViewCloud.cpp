@@ -80,6 +80,9 @@ int  main (int argc, char** argv) {
                     (*cloud).points[p].x = pos3D.at<Vec3f>(i, j)[0];
                     (*cloud).points[p].y = pos3D.at<Vec3f>(i, j)[1];
                     (*cloud).points[p].z = pos3D.at<Vec3f>(i, j)[2];
+                    //(*cloud).points[p].r = image.at<Vec3b>(i, j)val[0];
+                    //(*cloud).points[p].g = image.at<Vec3b>(i, j)val[1];
+                    //(*cloud).points[p].b = image.at<Vec3b>(i, j)val[2];
                 }
 
                 p++;
