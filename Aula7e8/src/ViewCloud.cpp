@@ -27,12 +27,22 @@ int  main (int argc, char** argv) {
         //creates new point clouds
         PointCloud<PointXYZRGB>::Ptr cloud (new PointCloud<PointXYZRGB>);
 
-        cout << " Choose point cloud file [1 or 2]: ";
+        cout << " Choose point cloud file [1 or 2] or input file name [3]: ";
         cin >> file;
         cout << endl;
 
         //reads files
-        sprintf(filename, "img/office%d.pcd", file);
+        if (file == 3) {
+            char name[20];
+            cout << " Input the point cloud file's name: ";
+            cin >> name;
+            cout << endl;
+
+            sprintf(filename, "img/%s", name);
+        }
+        else {
+            sprintf(filename, "img/office%d.pcd", file);
+        }
         if (io::loadPCDFile<PointXYZRGB> (filename, *cloud) == -1) {
             PCL_ERROR ("Couldn't read file.\n");
             return (-1);

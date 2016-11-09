@@ -28,11 +28,11 @@ class SimpleOpenNIViewer {
         viewer -> registerKeyboardCallback(SimpleOpenNIViewer::pcl_keyboard_callback, (void*)NULL); 
     } 
 
-    void cloud_cb_ (const PointCloud<PointXYZRGB>::ConstPtr &cloud) {
+    void cloud_cb_ (const PointCloud<PointXYZRGBA>::ConstPtr &cloud) {
         if (!viewer -> wasStopped()) {
             viewer -> showCloud (cloud);
             if (key == 'w') {
-                io::savePCDFileASCII ("test_1.pcd", *cloud);
+                io::savePCDFileASCII ("img/kinect1.pcd", *cloud);
                 key = '1';
             }
         }
@@ -41,7 +41,7 @@ class SimpleOpenNIViewer {
     void run() {
         Grabber* interface = new OpenNIGrabber();
 
-        boost::function<void (const PointCloud<PointXYZRGB>::ConstPtr&)> f =
+        boost::function<void (const PointCloud<PointXYZRGBA>::ConstPtr&)> f =
             boost::bind (&SimpleOpenNIViewer::cloud_cb_, this, _1);
 
         interface -> registerCallback(f);
@@ -58,8 +58,16 @@ class SimpleOpenNIViewer {
 };
 
 int main() {
+    //presents user interface
+    system("clear");
+    cout << endl << "---------------" << endl;
+    cout << " OpenNI Viewer " << endl;
+    cout << "---------------" << endl << endl;
+    cout << " Press 'W' for saving a point cloud." << endl;
+    cout << " Press 'Q' to quit." << endl << endl;
+
     SimpleOpenNIViewer v;
     v.run();
-    
+
     return 0;
 }
