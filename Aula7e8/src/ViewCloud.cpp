@@ -5,6 +5,9 @@
 #include <pcl/point_types.h>
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/filters/voxel_grid.h>
+#include <pcl/point_cloud.h>
+#include <pcl/io/pcd_io.h>
+
 
 using namespace pcl;
 using namespace cv;
@@ -50,7 +53,7 @@ int  main (int argc, char** argv) {
 
         //filtering to reduce number of points
         PointCloud<PointXYZRGB>::Ptr filtCloud (new PointCloud<PointXYZRGB>);
-        
+
         VoxelGrid<PointXYZRGB> vox;
         vox.setInputCloud(cloud);
         vox.setLeafSize(0.05f, 0.05f, 0.05f);
@@ -98,12 +101,11 @@ int  main (int argc, char** argv) {
                 p++;
             }
         }
-
         //displays point cloud
         visualization::CloudViewer viewer("Simple Cloud Viewer");
         viewer.showCloud(cloud);
         while (!viewer.wasStopped());
     }
- 
+
     return (0);
 }
