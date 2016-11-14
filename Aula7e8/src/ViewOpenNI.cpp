@@ -2,6 +2,7 @@
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
+#include <pcl/filters/voxel_grid.h>
 
 using namespace pcl;
 
@@ -33,6 +34,15 @@ class SimpleOpenNIViewer {
             viewer -> showCloud (cloud);
             if (key == 'w') {
                 io::savePCDFileASCII ("img/kinect1.pcd", *cloud);
+
+                //filtering to reduce number of points
+                PointCloud<PointXYZRGBA>::Ptr filtCloud (new PointCloud<PointXYZRGBA>);
+                VoxelGrid<PointXYZRGBA> vox;
+                vox.setInputCloud(cloud);
+                vox.setLeafSize(0.05f, 0.05f, 0.05f);
+                vox.filter(*filtCloud);
+                io::savePCDFileASCII ("img/filt_kinect1.pcd", *filtCloud);
+                
                 key = '1';
             }
         }
