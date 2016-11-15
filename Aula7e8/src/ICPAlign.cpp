@@ -26,7 +26,7 @@ int  main (int argc, char** argv) {
 
     //reads files
     if (sel) {
-    	if (io::loadPCDFile<PointXYZRGB> ("img/filt_kinect1.pcd", *cloud1) == -1) {
+	    	if (io::loadPCDFile<PointXYZRGB> ("img/filt_kinect1.pcd", *cloud1) == -1) {
         	PCL_ERROR ("Couldn't read file.\n");
         	return (-1);
     	}
@@ -51,8 +51,8 @@ int  main (int argc, char** argv) {
 
     IterativeClosestPoint<PointXYZRGB, PointXYZRGB> icp;
     icp.setTransformationEpsilon(1e-6);
-	icp.setMaxCorrespondenceDistance(0.25);
-	icp.setMaximumIterations(50);
+		icp.setMaxCorrespondenceDistance(0.25);
+		icp.setMaximumIterations(50);
     icp.setInputCloud(cloud2);
     icp.setInputTarget(cloud1);
     icp.align(*cloudAligned);
