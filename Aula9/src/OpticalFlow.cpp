@@ -33,7 +33,7 @@ int main() {
 	cap >> frame;
 	cvtColor(frame, nextFrame, CV_BGR2GRAY);
 
-	for(;;) {
+	for (;;) {
 		//gets image features
 		goodFeaturesToTrack(nextFrame, nextPts, nPts, qLevel, minDist);
 		
@@ -59,6 +59,4 @@ int main() {
 	}
 
 	return 0;
-
-
 }
