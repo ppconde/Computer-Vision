@@ -46,16 +46,19 @@ static void roiSelection(int event, int x, int y, int, void*) {
 int main() {
 	bool sel;
 
-	Mat frame, hsv, hue, roi, mask, roiMask, roiHist, backProj;
+	Mat frame, hsv, roi, mask, roiMask, roiHist, backProj;
 
 	//video file
 	const char* video = "vid/vid1.mp4";
 
 	//histogram configurations
-	const int channels = 0;
-	int histSize = 16;
-	float range[] = {0, 180};
-	const float* histRange = {range};
+	int channels[] = {0, 1};
+	int hbins = 30;
+	int sbins = 32;
+	int histSize[] = {hbins, sbins};
+	float hrange[] = {0, 180};
+	float srange[] = {0, 256};
+	const float* histRange[] = {hrange, srange};
 
 	//presents user interface
 	system("clear");		//clears terminal window
@@ -93,10 +96,6 @@ int main() {
 		inRange(hsv, Scalar(0, SMIN, MIN(VMIN, VMAX)),
            	Scalar(180, 256, MAX(VMIN, VMAX)), mask);
 
-		int ch[] = {0, 0};
-        hue.create(hsv.size(), hsv.depth());
-        mixChannels(&hsv, 1, &hue, 1, ch, 1);
-
         //displays point selection (cnt == 0 by default)
 		if (cnt == 0) {
 			cout
@@ -115,11 +114,12 @@ int main() {
 			//is points have been selected and ROI defined
 			if (roiPts.size() == 2) {
 				//creates ROI and ROI mask
-				roi = hue(roiBox);
+				roi = hsv(roiBox);
 				roiMask = mask(roiBox);
 
 				//creates ROI histogram
-				calcHist(&roi, 1, &channels, roiMask, roiHist, 1, &histSize, &histRange);
+				//(using both hue and sat (2 channels) gives better results)
+				calcHist(&roi, 1, channels, roiMask, roiHist, 2, histSize, histRange);
 				normalize(roiHist, roiHist, 0, 255, NORM_MINMAX);
 			}
 			else {
@@ -129,7 +129,7 @@ int main() {
 		}
 			
 		//calculates histogram back projection
-		calcBackProject(&hsv, 1, &channels, roiHist, backProj, &histRange);
+		calcBackProject(&hsv, 1, channels, roiHist, backProj, histRange);
 		
 		//backProj takes into account mask (better results)
 		backProj &= mask;
