@@ -4,35 +4,55 @@
 using namespace std;
 using namespace cv;
 
-#define VEC_SIZE 4
+#define SMIN 30
+#define VMIN 10
+#define VMAX 256
 
-Mat roiFrame;
+Mat roiFrame, roiAux;
+Rect roiBox;
 vector<Point> roiPts;		//points defining a ROI
+int cnt = 0;				//mouse clicks counter
 
-void roiSelection(int event, int x, int y, int flags, void* param) {
+static void roiSelection(int event, int x, int y, int, void*) {
 	// This function waits for user to select points that define a ROI
 	switch (event) {
 		case CV_EVENT_LBUTTONDOWN:
-			//point selection and storage
-			if (roiPts.size() < VEC_SIZE) {
+			cnt++;
+			
+			//point selection and ROI definition
+			if (cnt <= 2) {
+				//point selection and display
 				Point selected = Point(x, y);
 				roiPts.push_back(selected);
 
 				circle(roiFrame, selected, 5, Scalar(0, 0, 255), 1);
+				if (cnt == 2) {
+					//ROI display and storage
+					rectangle(roiFrame, roiPts[0], roiPts[1], Scalar(255, 0, 0), 2);
+					roiBox = Rect(roiPts[0], roiPts[1]);
+				}
+			}
+			else {
+				//flushes point vector
+				roiFrame = roiAux.clone();
+				roiPts.clear();
+				cnt = 0;
 			}
 
-			imshow("Select ROI", roiFrame);
+			imshow("Object Tracking", roiFrame);			
 	}
 }
 
 int main() {
 	bool sel;
 
-	Mat frame, prevFrame, nextFrame, roi, roiHist, backProj;
+	Mat frame, hsv, hue, roi, mask, roiMask, roiHist, backProj;
 
+	//video file
 	const char* video = "vid/vid1.mp4";
 
 	//histogram configurations
+	const int channels = 0;
 	int histSize = 16;
 	float range[] = {0, 180};
 	const float* histRange = {range};
@@ -56,61 +76,73 @@ int main() {
 
 	if (!cap.isOpened()) return -1;
 
-	//gets first frame
-	cap >> frame;
-	roiFrame = frame.clone();
+	//defines termination criteria for cam shift
+	TermCriteria termCrit = TermCriteria(CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 10, 1);
 
-	//mouse callback for selecting ROI
-	imshow("Select ROI", roiFrame);
-	setMouseCallback("Select ROI", roiSelection);
-	waitKey(0);
-	//destroyWindow("Select ROI");
+	//performs tracking
+	for (;;) {
+		cap >> frame;		//gets new frame
 
-	int roiBox = roiPts.size();
+		//ends tracking if video ends
+		if (frame.rows == 0 || frame.cols == 0) break;
 
-	if (roiBox == 4) {
-		//creates ROI - MUDAR PARA PROCURAR MAIOR E MENOR PONTO
-		Vec2i tl = roiPts[0];		//top left corner
-		Vec2i br = roiPts[3];		//bottom right corner
-		roi = frame(Rect(roiPts[0], roiPts[3]));
+		//converts frame to HSV colorspace
+		cvtColor(frame, hsv, COLOR_BGR2HSV);
 
-		cvtColor(roi, roi, COLOR_BGR2HSV);
+		//gets mask (easier and more accurate detection)
+		inRange(hsv, Scalar(0, SMIN, MIN(VMIN, VMAX)),
+           	Scalar(180, 256, MAX(VMIN, VMAX)), mask);
 
-		//creates ROI histogram
-		calcHist(&roi, 1, 0, Mat(), roiHist, 1, &histSize, &histRange);
-		normalize(roiHist, roiHist, 0, 255, NORM_MINMAX, -1, Mat());
+		int ch[] = {0, 0};
+        hue.create(hsv.size(), hsv.depth());
+        mixChannels(&hsv, 1, &hue, 1, ch, 1);
 
-		//defines termination criteria for cam shift
-		//TermCriteria termCrit = TermCriteria(TERM_CRITERIA_EPS | TERM_CRITERIA_COUNT, 10, 1);
+        //displays point selection (cnt == 0 by default)
+		if (cnt == 0) {
+			cout
+			<< " Select two points to define ROI with the mouse. A third mouse click will reset the selection." << endl
+			<< " Press ENTER when the selection is made." << endl << endl;
 
-		//performs tracking
-		for (;;) {
-			prevFrame = nextFrame.clone();	//copies last frame
-			cap >> frame;					//gets new frame
+			//images for selection
+			roiFrame = frame.clone();
+			roiAux = roiFrame.clone();
 
-			//ends tracking if video ends
-			if (frame.rows == 0 || frame.cols == 0) break;
+			//mouse callback for selecting ROI
+			imshow("Object Tracking", roiFrame);
+			setMouseCallback("Object Tracking", roiSelection);
+			waitKey(0);
 
-			cvtColor(frame, frame, COLOR_BGR2HSV);
+			//is points have been selected and ROI defined
+			if (roiPts.size() == 2) {
+				//creates ROI and ROI mask
+				roi = hue(roiBox);
+				roiMask = mask(roiBox);
 
-			//calculates histogram back projection
-			float range[] = {0, 180};
-			const float* frameRange = {range};
-			calcBackProject(&frame, 1, 0, roiHist, backProj, &frameRange);
-
-			//calculates cam shift
-			RotatedRect trackBox = CamShift(backProj, roi,
-				TermCriteria(TERM_CRITERIA_EPS | TERM_CRITERIA_COUNT, 10, 1));
-
-			imshow("Object Tracking", frame);
-
-			if (waitKey(24) >= 0) break;
+				//creates ROI histogram
+				calcHist(&roi, 1, &channels, roiMask, roiHist, 1, &histSize, &histRange);
+				normalize(roiHist, roiHist, 0, 255, NORM_MINMAX);
+			}
+			else {
+				cout << " Error: not enough points selected to form ROI." << endl;
+				return -1;
+			}
 		}
-	}
-	else {
-		cout << " Error: not enough points selected to form ROI." << endl;
-		return -1;
-	}
+			
+		//calculates histogram back projection
+		calcBackProject(&hsv, 1, &channels, roiHist, backProj, &histRange);
+		
+		//backProj takes into account mask (better results)
+		backProj &= mask;
 
+		//calculates cam shift to track object inside ROI
+		RotatedRect trackBox = CamShift(backProj, roiBox, termCrit);
+
+		//draws ellipse around tracked object
+		ellipse(frame, trackBox, Scalar(255, 0, 0), 2);
+		
+		imshow("Object Tracking", frame);
+
+		if (waitKey(24) >= 0) break;
+	}		
 	return 0;
 }
