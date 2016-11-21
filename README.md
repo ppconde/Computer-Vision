@@ -106,3 +106,14 @@ Home Dir (eg. Aula1)
 	- Saves points cloud from feed to PCD file.
 * ICPAlign
 	- Takes two clouds from the same scene and aligns them, creating a third, aligned, cloud.
+
+## Aula 9
+* OpticalFlow
+	- Tracks movement by means of optical flow.
+	- Displays movement as difference in a point position between frames (as a line).
+* BackForegSep
+	- Tracks movement by means of background subtraction.
+	- Displays the difference between the background and new frames. Objects that moved between frames are displayed as white.
+* ObjTracking
+	- Tracks selected objects, by means of a ROI (region of interest), using the CamShift/MeanShift algorythm.
+	- Uses color as a basis for object identification.
