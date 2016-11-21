@@ -63,7 +63,6 @@ int main()
 			putText(frame, frameNumberString.c_str(), cv::Point(15, 15),
 			        FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(0,0,0));
 			//show the current frame and the fg masks
-			imshow("Video File", frame);
 			imshow("Video File Subtracted", fgMaskMOG2);
 
       waitKey(20);
@@ -80,14 +79,6 @@ int main()
 				break;
 			imshow("Video Capture", frame);
 			pMOG2->apply(frame, fgMaskMOG2);
-			//get the frame number and write it on the current frame
-			stringstream ss;
-			rectangle(frame, cv::Point(10, 2), cv::Point(100,20),
-			          cv::Scalar(255,255,255), -1);
-			ss << capture.get(CAP_PROP_POS_FRAMES);
-			string frameNumberString = ss.str();
-			putText(frame, frameNumberString.c_str(), cv::Point(15, 15),
-			        FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(0,0,0));
 			imshow("Video Capture Subtracted", fgMaskMOG2);
 			if (waitKey(5) >= 0) break;				//waits 30ms for program to render next frame
 		}
