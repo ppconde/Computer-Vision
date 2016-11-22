@@ -18,7 +18,7 @@ static void roiSelection(int event, int x, int y, int, void*) {
 	switch (event) {
 		case CV_EVENT_LBUTTONDOWN:
 			cnt++;
-			
+
 			//point selection and ROI definition
 			if (cnt <= 2) {
 				//point selection and display
@@ -39,7 +39,7 @@ static void roiSelection(int event, int x, int y, int, void*) {
 				cnt = 0;
 			}
 
-			imshow("Object Tracking", roiFrame);			
+			imshow("Object Tracking", roiFrame);
 	}
 }
 
@@ -49,7 +49,7 @@ int main() {
 	Mat frame, hsv, roi, mask, roiMask, roiHist, backProj;
 
 	//video file
-	const char* video = "vid/vid1.mp4";
+	const char* video = "vid/Bike.mp4";
 
 	//histogram configurations
 	int channels[] = {0, 1};
@@ -127,10 +127,10 @@ int main() {
 				return -1;
 			}
 		}
-			
+
 		//calculates histogram back projection
 		calcBackProject(&hsv, 1, channels, roiHist, backProj, histRange);
-		
+
 		//backProj takes into account mask (better results)
 		backProj &= mask;
 
@@ -139,10 +139,10 @@ int main() {
 
 		//draws ellipse around tracked object
 		ellipse(frame, trackBox, Scalar(255, 0, 0), 2);
-		
+
 		imshow("Object Tracking", frame);
 
 		if (waitKey(24) >= 0) break;
-	}		
+	}
 	return 0;
 }
