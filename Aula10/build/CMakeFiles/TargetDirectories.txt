@@ -1,5 +1,0 @@
-/media/andre/Dados/UA/MEAI/Visão por Computador/Projectos/cv1617-60623/Aula10/build/CMakeFiles/edit_cache.dir
-/media/andre/Dados/UA/MEAI/Visão por Computador/Projectos/cv1617-60623/Aula10/build/CMakeFiles/rebuild_cache.dir
-/media/andre/Dados/UA/MEAI/Visão por Computador/Projectos/cv1617-60623/Aula10/build/src/CMakeFiles/rebuild_cache.dir
-/media/andre/Dados/UA/MEAI/Visão por Computador/Projectos/cv1617-60623/Aula10/build/src/CMakeFiles/edit_cache.dir
-/media/andre/Dados/UA/MEAI/Visão por Computador/Projectos/cv1617-60623/Aula10/build/src/CMakeFiles/TempMatch.dir
