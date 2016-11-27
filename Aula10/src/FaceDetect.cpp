@@ -43,8 +43,7 @@
        else
        { printf(" --(!) No captured frame -- Break!"); break; }
 
-       int c = waitKey(10);
-       if( (char)c == 'c' ) { break; }
+       if( waitKey(24) >= 0 ) { break; }
       }
    }
    return 0;
