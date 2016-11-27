@@ -1,14 +1,13 @@
-#include "opencv2/core/core.hpp"
-#include <opencv2/opencv.hpp>
-#include "opencv2/highgui/highgui.hpp"
-
+#include "opencv2/core.hpp"
+#include "opencv2/face.hpp"
+#include "opencv2/highgui.hpp"
+#include "opencv2/imgproc.hpp"
 #include <iostream>
 #include <fstream>
 #include <sstream>
-
 using namespace cv;
+using namespace cv::face;
 using namespace std;
-
 static Mat norm_0_255(InputArray _src) {
     Mat src = _src.getMat();
     // Create and return normalized image:
@@ -26,12 +25,11 @@ static Mat norm_0_255(InputArray _src) {
     }
     return dst;
 }
-
 static void read_csv(const string& filename, vector<Mat>& images, vector<int>& labels, char separator = ';') {
     std::ifstream file(filename.c_str(), ifstream::in);
     if (!file) {
         string error_message = "No valid input file was given, please check the given filename.";
-        CV_Error(CV_StsBadArg, error_message);
+        CV_Error(Error::StsBadArg, error_message);
     }
     string line, path, classlabel;
     while (getline(file, line)) {
@@ -44,7 +42,6 @@ static void read_csv(const string& filename, vector<Mat>& images, vector<int>& l
         }
     }
 }
-
 int main(int argc, const char *argv[]) {
     // Check for valid command line arguments, print usage
     // if no arguments were given.
@@ -73,7 +70,7 @@ int main(int argc, const char *argv[]) {
     // Quit if there are not enough images for this demo.
     if(images.size() <= 1) {
         string error_message = "This demo needs at least 2 images to work. Please add more images to your data set!";
-        CV_Error(CV_StsError, error_message);
+        CV_Error(Error::StsError, error_message);
     }
     // Get the height from the first image. We'll need this
     // later in code to reshape the images to their original
@@ -82,7 +79,7 @@ int main(int argc, const char *argv[]) {
     // The following lines simply get the last images from
     // your dataset and remove it from the vector. This is
     // done, so that the training data (which we learn the
-    // cv::FaceRecognizer on) and the test data we test
+    // cv::BasicFaceRecognizer on) and the test data we test
     // the model with, do not overlap.
     Mat testSample = images[images.size() - 1];
     int testLabel = labels[labels.size() - 1];
@@ -107,7 +104,7 @@ int main(int argc, const char *argv[]) {
     //
     //      cv::createEigenFaceRecognizer(0, 123.0);
     //
-    Ptr<FaceRecognizer> model = createEigenFaceRecognizer();
+    Ptr<BasicFaceRecognizer> model = createEigenFaceRecognizer();
     model->train(images, labels);
     // The following line predicts the label of a given
     // test image:
@@ -122,11 +119,11 @@ int main(int argc, const char *argv[]) {
     string result_message = format("Predicted class = %d / Actual class = %d.", predictedLabel, testLabel);
     cout << result_message << endl;
     // Here is how to get the eigenvalues of this Eigenfaces model:
-    Mat eigenvalues = model->getMat("eigenvalues");
+    Mat eigenvalues = model->getEigenValues();
     // And we can do the same to display the Eigenvectors (read Eigenfaces):
-    Mat W = model->getMat("eigenvectors");
+    Mat W = model->getEigenVectors();
     // Get the sample mean from the training data
-    Mat mean = model->getMat("mean");
+    Mat mean = model->getMean();
     // Display or save:
     if(argc == 2) {
         imshow("mean", norm_0_255(mean.reshape(1, images[0].rows)));
@@ -151,13 +148,12 @@ int main(int argc, const char *argv[]) {
             imwrite(format("%s/eigenface_%d.png", output_folder.c_str(), i), norm_0_255(cgrayscale));
         }
     }
-
     // Display or save the image reconstruction at some predefined steps:
     for(int num_components = min(W.cols, 10); num_components < min(W.cols, 300); num_components+=15) {
         // slice the eigenvectors from the model
         Mat evs = Mat(W, Range::all(), Range(0, num_components));
-        Mat projection = subspaceProject(evs, mean, images[0].reshape(1,1));
-        Mat reconstruction = subspaceReconstruct(evs, mean, projection);
+        Mat projection = LDA::subspaceProject(evs, mean, images[0].reshape(1,1));
+        Mat reconstruction = LDA::subspaceReconstruct(evs, mean, projection);
         // Normalize the result:
         reconstruction = norm_0_255(reconstruction.reshape(1, images[0].rows));
         // Display or save:
