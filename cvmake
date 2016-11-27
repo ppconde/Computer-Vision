@@ -22,17 +22,25 @@ if [ -f CMakeLists.txt ]; then
 			echo "target_link_libraries("$arg" \${OpenCV_LIBS} \${PCL_LIBRARIES})" >> src/CMakeLists.txt
 		done
 	fi
-	#creates folder "build"
-	mkdir -p build
-	cd build
-	echo " Building project..."
-	#builds project
-	cmake ..
-	echo " Compiling project..."
-	#compiles project
-	make
-	#stores "make" output in var "makeerr" (if compilation error, makeerr == 2)
-	makeerr=$?
+	if [ ! -d build ]; then
+		mkdir -p build
+		cd build
+		echo " Building project..."
+		#builds project
+		cmake ..
+	else
+		cd build
+	fi
+	if [ -f Makefile ]; then
+		echo " Compiling project..."
+		#compiles project
+		make
+		#stores "make" output in var "makeerr" (if compilation error, makeerr == 2)
+		makeerr=$?
+	else
+		makeerr=0
+		echo " Error: no Makefile found in build folder."
+	fi
 	cd ..
 	#restores "src/CMakeLists.txt" by reading "file" and writing contents
 	if [ "$#" -gt 1 ] || [ "$1" != "-c" ]; then
