@@ -6,7 +6,9 @@
 #checks if "CMakeLists.txt" exists
 if [ -f CMakeLists.txt ]; then
 	#if the # of args is bigger than "1" and the first isn't "-c"
-	if [ "$#" -gt 1 ] || [ "$1" != "-c" ]; then
+	if [ "$#" -eq "0" ]; then
+		:		#do nothing
+	elif [ "$#" -gt 1 ] || [ "$1" != "-c" ]; then
 		#reads "src/CMakeLists.txt" and stores in var "file"
 		file=src/CMakeLists.txt
 		IFS=$'\n'
@@ -31,7 +33,7 @@ if [ -f CMakeLists.txt ]; then
 	else
 		cd build
 	fi
-	if [ -f Makefile ]; then
+	if [ -f CMakeCache.txt ]; then
 		echo " Compiling project..."
 		#compiles project
 		make
@@ -43,7 +45,9 @@ if [ -f CMakeLists.txt ]; then
 	fi
 	cd ..
 	#restores "src/CMakeLists.txt" by reading "file" and writing contents
-	if [ "$#" -gt 1 ] || [ "$1" != "-c" ]; then
+	if [ "$#" -eq "0" ]; then
+		:
+	elif [ "$#" -gt 1 ] || [ "$1" != "-c" ]; then
 		echo "" > src/CMakeLists.txt
 		for line in $lines; do
 			echo $line >> src/CMakeLists.txt
