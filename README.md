@@ -117,7 +117,10 @@ Home Dir (eg. Aula1)
 * ObjTracking
 	- Tracks selected objects, by means of a ROI (region of interest), using the CamShift/MeanShift algorythm.
 	- Uses color as a basis for object identification.
+
 ## Aula 10
 * TempMatch
 	- Attempts to match templates to features in an image or video file.
 	- Slow but more robust than simple matching, because it checks for scale.
+* FaceDetect
+	- Detects faces and eyes in an image.

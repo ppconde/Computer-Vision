@@ -10,7 +10,7 @@ using namespace cv;
 bool type;
 int method;
 int threshValue;
-string filename = "vid/vid1.mp4";
+string filename = "vid/Bike.mp4";
 Mat frame;
 
 int main()
