@@ -16,7 +16,7 @@ int main() {
 	double minDist = 1.0;				//min euclidian distance
 
 	//opens default camera
-	VideoCapture cap(0);
+	VideoCapture cap("vid/Bike.avi");
 
 	//check if success
 	if (!cap.isOpened()) return -1;
@@ -41,6 +41,11 @@ int main() {
 		prevPts = nextPts;
 		cap >> frame;						//gets a new frame from camera
 		
+		if (!frame.data) {
+			cap.open("vid/Bike.avi");
+			continue;
+		}
+
 		cvtColor(frame, nextFrame, CV_BGR2GRAY);
 
 		//calculates optical flow using Lucas-Kanade
