@@ -1,3 +1,3 @@
-#add_executable(phldr phldr.cpp)
-#target_link_libraries(phldr ${OpenCV_LIBS} ${PCL_LIBRARIES})
+add_executable(Hough Hough.cpp)
+target_link_libraries(Hough ${OpenCV_LIBS} ${PCL_LIBRARIES})
 #
