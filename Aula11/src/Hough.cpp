@@ -14,12 +14,9 @@ Mat frame, frame_gray, edges;
 Mat standard_hough;
 int min_threshold = 50;
 int max_trackbar = 150;
-string filename = "vid/vid1.mp4";
+//string filename = "vid/vid1.mp4";
 
-const char* standard_name = "Standard Hough Lines Demo";
-
-int s_trackbar = max_trackbar;
-int p_trackbar = max_trackbar;
+const char* standard_name = "Hough ";
 
 /// Function Headers
 void Standard_Hough( int, void* );
@@ -61,7 +58,7 @@ int main( int, char** argv )
       sprintf( thresh_label, "Thres: %d + input", min_threshold );
 
       namedWindow( standard_name, WINDOW_AUTOSIZE );
-      createTrackbar( thresh_label, standard_name, &s_trackbar, max_trackbar, Standard_Hough);
+      createTrackbar( thresh_label, standard_name, &max_trackbar, max_trackbar, Standard_Hough);
 
       /// Initialize
       Standard_Hough(0, 0);
@@ -82,7 +79,7 @@ void Standard_Hough( int, void* )
   cvtColor( edges, standard_hough, COLOR_GRAY2BGR );
 
   /// 1. Use Standard Hough Transform
-  HoughLines( edges, s_lines, 1, CV_PI/180, min_threshold + s_trackbar, 0, 0 );
+  HoughLines( edges, s_lines, 1, CV_PI/180, min_threshold + max_trackbar, 0, 0 );
 
   /// Show the result
   for( size_t i = 0; i < s_lines.size(); i++ )
