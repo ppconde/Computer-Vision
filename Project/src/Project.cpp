@@ -4,97 +4,176 @@
 using namespace std;
 using namespace cv;
 
-void mouseHandler(int event, int x, int y, int flags, void* param);
+
+Mat roiFrame, roiAux;
+Rect roiBox;
+vector<Point2f> roiPts;		//points defining a ROI
+int cnt = 0;				//mouse clicks counter
+
+int funcInt;	//for program function type
 
 
-vector<Point2f> prevPts, nextPts;		//frame features
-vector<uchar> status;					//status vector
-vector<float> err;						//error vector
+static void roiSelection(int event, int x, int y, int, void*) {
+	// This function waits for user to select points that define a ROI
+	switch (event) {
+		case CV_EVENT_LBUTTONDOWN:
+			cnt++;
 
-int nPts = 500;						//number of features
-double qLevel = 0.5;				//quality level
-double minDist = 0.05;				//min euclidian distance
+			//point selection and ROI definition
+			if (cnt <= funcInt) {
+				//point selection and display
+				Point selected = Point(x, y);
+				roiPts.push_back(selected);
 
-int drag = 0, select_flag = 0;
-Mat frame, prevFrame, nextFrame;		//image matrixes
-Point point1, point2;
-bool callback = false;
+				circle(roiFrame, selected, 5, Scalar(0, 0, 255), 1);
+				if (cnt == 2) {
+					//ROI display and storage
+					rectangle(roiFrame, roiPts[0], roiPts[1], Scalar(255, 0, 0), 2);
+					roiBox = Rect(roiPts[0], roiPts[1]);
+				}
+			}
+			else {
+				//flushes point vector
+				roiFrame = roiAux.clone();
+				roiPts.clear();
+				cnt = 0;
+			}
+
+			imshow("Optical Flow", roiFrame);
+	}
+}
 
 int main() {
+	int sel;	//video selection
+	bool func;	//program function type
+	char file[20];
 
-  //video file
+	Mat frame, prevFrame, nextFrame, roi;
+
+	vector<Point2f> prevPts, nextPts;	//frame features
+	vector<uchar> status;				//status vector
+	vector<float> err;					//error vector
+
+	int nPts = 500;						//number of features
+	double qLevel = 0.05;				//quality level
+	double minDist = 1.0;				//min euclidian distance
+
+	float x1, y1, x2, y2;
+
+	//presents user interface
+	system("clear");		//clears terminal window
+	cout << endl
+		 << " --------------------------" << endl
+		 << "  Optical Flow for Project " << endl
+		 << " --------------------------" << endl << endl
+		 << " Choose video file [1 - ?]: ";
+	cin >> sel;
+	cout << endl;
+	cout << " Choose [0 = ROI, 1 = single point]: ";
+	cin >> func;
+	cout << endl << endl;
+
+	if (func) funcInt = 3;
+	else funcInt = 2;
+
+	//video file
 	VideoCapture cap;
-	const char* video = "vid/vid1.mp4";
-  cap.open(video);
+
+	sprintf(file, "vid/vid%d.mp4", sel);
+	//const char* video = "vid/vid1.mp4";
+	cap.open(file);
 
 	//check if success
 	if (!cap.isOpened()) return -1;
 
-	//presents user interface
-	system("clear");		//clears terminal window
-	cout << endl << " --------------------------------" << endl;
-	cout << "  Optical Flow with Lucas-Kanade " << endl;
-	cout << " --------------------------------" << endl << endl;
-
-	namedWindow("Optical Flow L-K", CV_WINDOW_AUTOSIZE);
-
-	//gets initial image
-	cap >> frame;
-	cvtColor(frame, nextFrame, CV_BGR2GRAY);
-
 	for (;;) {
+        //displays point selection (cnt == 0 by default)
+		if (cnt == 0) {
+			cout
+			<< " Select two points to define ROI with the mouse. A third mouse click will reset the selection." << endl
+			<< " Press ENTER when the selection is made." << endl << endl;
+
+			cap >> frame;		//gets new frame
+			//ends tracking if video ends
+			if (frame.rows == 0 || frame.cols == 0) break;
+
+			resize(frame, frame, Size(), 1.5, 1.5, INTER_CUBIC);
+			cvtColor(frame, nextFrame, CV_BGR2GRAY);
+
+			//images for selection
+			roiFrame = frame.clone();
+			roiAux = roiFrame.clone();
+
+			//mouse callback for selecting ROI
+			imshow("Optical Flow", roiFrame);
+			setMouseCallback("Optical Flow", roiSelection);
+			waitKey(0);
+
+			//is points have been selected and ROI defined
+			if (roiPts.size() == funcInt) {
+				//creates ROI and ROI mask
+				roi = frame(roiBox);
+				cvtColor(roi, nextFrame, CV_BGR2GRAY);
+				//cvtColor(roi, roi, COLOR_BGR2HSV);
+				//imshow("roi", result);
+				if (func) nextPts.push_back(roiPts[2]);
+			}
+			else {
+				cout << " Error: not enough points selected to form ROI." << endl;
+				return -1;
+			}
+		}
+
 		//gets image features
-		goodFeaturesToTrack(nextFrame, nextPts, nPts, qLevel, minDist);
+		if (!func) {
+			goodFeaturesToTrack(nextFrame, nextPts, nPts, qLevel, minDist);
+		}
 
 		prevFrame = nextFrame.clone();		//first frame is the same as last one
 		prevPts = nextPts;
 		cap >> frame;						//gets a new frame from camera
+		
+		//if (!frame.data) {
+		//	cap.open("vid/Bike.avi");
+		//	continue;
+		//}
 
+		resize(frame, frame, Size(), 1.5, 1.5, INTER_LANCZOS4);
 		cvtColor(frame, nextFrame, CV_BGR2GRAY);
+
+		nextFrame = nextFrame(roiBox);
 
 		//calculates optical flow using Lucas-Kanade
 		calcOpticalFlowPyrLK(prevFrame, nextFrame, prevPts, nextPts, status, err);
 
+		//draw ROI rectangle
+		rectangle(frame, roiPts[0], roiPts[1], Scalar(255, 255, 0), 1);
+
 		//draws motion lines on display
 		for (int i = 0; i < nextPts.size(); i++) {
 			if (status[i]) {
-				line(frame, prevPts[i], nextPts[i], Scalar(255, 0, 0));
+				x1 = roiPts[0].x + prevPts[i].x;
+				y1 = roiPts[0].y + prevPts[i].y;
+				x2 = roiPts[0].x + nextPts[i].x;
+				y2 = roiPts[0].y + nextPts[i].y;
+
+				cout << "PONTOS" << endl;
+				cout << roiPts << endl;
+				cout << prevPts[i] << endl;
+				cout << nextPts[i] << endl << endl;
+
+				cout << x1 << endl;
+				cout << y1 << endl;
+				cout << x2 << endl;
+				cout << y2 << endl << endl;
+				line(frame, Point(x1, y1), Point(x2, y2), Scalar(255, 255, 0));
 			}
 		}
 
-		imshow("Optical Flow L-K", frame);	//shows original capture
-		setMouseCallback("frame",mouseHandler,0);
-		if(!frame.data) break;
-	    if (waitKey(50) >= 0) break;				//waits 5ms for program to render next frame
+		imshow("Optical Flow", frame);	//shows original capture
+
+	    if (waitKey(30) >= 0) break;
 	}
 
 	return 0;
-}
-void mouseHandler(int event, int x, int y, int flags, void* param)
-{
-    if (event == CV_EVENT_LBUTTONDOWN && !drag && !select_flag)
-    {
-        /* left button clicked. ROI selection begins */
-        point1 = Point(x, y);
-        drag = 1;
-    }
-
-    if (event == CV_EVENT_MOUSEMOVE && drag && !select_flag)
-    {
-        /* mouse dragged. ROI being selected */
-        Mat img1 = frame.clone();
-        point2 = Point(x, y);
-        rectangle(img1, point1, point2, CV_RGB(255, 0, 0), 3, 8, 0);
-        imshow(frame, img1);
-    }
-
-    if (event == CV_EVENT_LBUTTONUP && drag && !select_flag)
-    {
-        Mat img2 = frame.clone();
-        point2 = Point(x, y);
-        drag = 0;
-        select_flag = 1;
-        imshow(frame, img2);
-        callback = true;
-    }
 }
