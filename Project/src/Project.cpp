@@ -21,14 +21,32 @@ static void roiSelection(int event, int x, int y, int, void*) {
 
 			//point selection and ROI definition
 			if (cnt <= funcInt) {
-				//point selection and display
-				Point selected = Point(x, y);
-				roiPts.push_back(selected);
+				if (funcInt == 2) {
+					//point selection and display
+					Point selected = Point(x, y);
+					roiPts.push_back(selected);
 
-				circle(roiFrame, selected, 5, Scalar(0, 0, 255), 1);
-				if (cnt == 2) {
-					//ROI display and storage
-					rectangle(roiFrame, roiPts[0], roiPts[1], Scalar(255, 0, 0), 2);
+					circle(roiFrame, selected, 5, Scalar(0, 0, 255), 1);
+					if (cnt == 2) {
+						//ROI display and storage
+						rectangle(roiFrame, roiPts[0], roiPts[1], Scalar(255, 0, 0), 2);
+						roiBox = Rect(roiPts[0], roiPts[1]);
+					}
+				}
+				else if (funcInt == 3) {
+					//point selection and display
+					Point first = Point(1, 1);
+					roiPts.push_back(first);
+					Point last = Point(roiFrame.size());
+					roiPts.push_back(last);
+
+					cnt = cnt + 2;
+
+					Point selected = Point(x, y);
+					roiPts.push_back(selected);
+
+					circle(roiFrame, selected, 5, Scalar(0, 0, 255), 1);
+
 					roiBox = Rect(roiPts[0], roiPts[1]);
 				}
 			}
