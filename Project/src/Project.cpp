@@ -65,6 +65,7 @@ int main() {
 	int sel;	//video selection
 	bool func;	//program function type
 	char file[20];
+	int linesz;	//line thickness
 
 	Mat frame, prevFrame, nextFrame, roi;
 
@@ -72,9 +73,9 @@ int main() {
 	vector<uchar> status;				//status vector
 	vector<float> err;					//error vector
 
-	int nPts = 500;						//number of features
+	int nPts = 1000;					//number of features
 	double qLevel = 0.05;				//quality level
-	double minDist = 1.0;				//min euclidian distance
+	double minDist = 0.01;				//min euclidian distance
 
 	float x1, y1, x2, y2;
 
@@ -150,13 +151,8 @@ int main() {
 		prevFrame = nextFrame.clone();		//first frame is the same as last one
 		prevPts = nextPts;
 		cap >> frame;						//gets a new frame from camera
-		
-		//if (!frame.data) {
-		//	cap.open("vid/Bike.avi");
-		//	continue;
-		//}
 
-		resize(frame, frame, Size(), 1.5, 1.5, INTER_LANCZOS4);
+		resize(frame, frame, Size(), 1.5, 1.5, INTER_CUBIC);
 		cvtColor(frame, nextFrame, CV_BGR2GRAY);
 
 		nextFrame = nextFrame(roiBox);
@@ -165,7 +161,9 @@ int main() {
 		calcOpticalFlowPyrLK(prevFrame, nextFrame, prevPts, nextPts, status, err);
 
 		//draw ROI rectangle
-		rectangle(frame, roiPts[0], roiPts[1], Scalar(255, 255, 0), 1);
+		if (!func) {
+			rectangle(frame, roiPts[0], roiPts[1], Scalar(255, 255, 0), 1);
+		}
 
 		//draws motion lines on display
 		for (int i = 0; i < nextPts.size(); i++) {
@@ -184,13 +182,33 @@ int main() {
 				cout << y1 << endl;
 				cout << x2 << endl;
 				cout << y2 << endl << endl;
-				line(frame, Point(x1, y1), Point(x2, y2), Scalar(255, 255, 0));
+
+				if (func) linesz = 2;
+				else linesz = 1;
+
+				line(frame, Point(x1, y1), Point(x2, y2), Scalar(255, 255, 0), linesz);
 			}
 		}
 
 		imshow("Optical Flow", frame);	//shows original capture
 
-	    if (waitKey(30) >= 0) break;
+		//pauses and exits videos
+		char key = waitKey(33);
+
+		//if "space" pressed, pauses
+	    if (key == 32) {
+	    	cout << "test" << endl;
+	    	key = 0;
+	    	while (key != 32) {
+	    		imshow("Optical Flow", frame);
+	    		key = waitKey(5);
+	    		if (key == 27) break;
+	    	}
+	    	if (key == 27) break;
+	    	else key = 0;
+	    }
+	    //if "esc" pressed, exits
+	    if (key == 27) break;
 	}
 
 	return 0;
