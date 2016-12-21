@@ -65,6 +65,7 @@ int main() {
 	int sel;	//video selection
 	bool func;	//program function type
 	char file[20];
+	int linesz;	//line thickness
 
 	Mat frame, prevFrame, nextFrame, roi;
 
@@ -181,7 +182,11 @@ int main() {
 				cout << y1 << endl;
 				cout << x2 << endl;
 				cout << y2 << endl << endl;
-				line(frame, Point(x1, y1), Point(x2, y2), Scalar(255, 255, 0));
+
+				if (func) linesz = 2;
+				else linesz = 1;
+
+				line(frame, Point(x1, y1), Point(x2, y2), Scalar(255, 255, 0), linesz);
 			}
 		}
 
