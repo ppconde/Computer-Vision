@@ -1,4 +1,0 @@
-/home/ppconde/Documents/VC/git/cv1617-60623/Project/src/build/CMakeFiles/edit_cache.dir
-/home/ppconde/Documents/VC/git/cv1617-60623/Project/src/build/CMakeFiles/Histogram.dir
-/home/ppconde/Documents/VC/git/cv1617-60623/Project/src/build/CMakeFiles/rebuild_cache.dir
-/home/ppconde/Documents/VC/git/cv1617-60623/Project/src/build/CMakeFiles/Project.dir

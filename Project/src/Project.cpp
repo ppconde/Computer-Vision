@@ -14,7 +14,7 @@ int funcInt;	//for program function type
 
 
 static void roiSelection(int event, int x, int y, int, void*) {
-	// This function waits for user to select points that define a ROI
+	// This function waits for user to select points that define a ROI or a point of interest
 	switch (event) {
 		case CV_EVENT_LBUTTONDOWN:
 			cnt++;
@@ -62,10 +62,10 @@ static void roiSelection(int event, int x, int y, int, void*) {
 }
 
 int main() {
-	int sel;	//video selection
-	bool func;	//program function type
+	int sel;							//video selection
+	bool func;							//program function type
 	char file[20];
-	int linesz;	//line thickness
+	int linesz;							//line thickness
 
 	Mat frame, prevFrame, nextFrame, roi;
 
@@ -73,11 +73,12 @@ int main() {
 	vector<uchar> status;				//status vector
 	vector<float> err;					//error vector
 
-	int nPts = 1000;					//number of features
+	int nPts = 2000;					//number of features
 	double qLevel = 0.05;				//quality level
 	double minDist = 0.01;				//min euclidian distance
 
-	float x1, y1, x2, y2;
+	float x1, y1, x2, y2;				//point coordinates for drawing
+	vector<Point2f> linPts;				//auxilliary vector for point path
 
 	//presents user interface
 	system("clear");		//clears terminal window
@@ -92,8 +93,15 @@ int main() {
 	cin >> func;
 	cout << endl << endl;
 
-	if (func) funcInt = 3;
-	else funcInt = 2;
+	//properties for each program function
+	if (func) {
+		funcInt = 3;
+		linesz = 2;
+	}
+	else {
+		funcInt = 2;
+		linesz = 1;
+	}
 
 	//video file
 	VideoCapture cap;
@@ -113,10 +121,15 @@ int main() {
 			<< " Press ENTER when the selection is made." << endl << endl;
 
 			cap >> frame;		//gets new frame
-			//ends tracking if video ends
-			if (frame.rows == 0 || frame.cols == 0) break;
+			if(!frame.data) {
+				cout << " Error: no video data found." << endl
+				break;
+			}
 
+			//resizes video frames for viewing purposes
 			resize(frame, frame, Size(), 1.5, 1.5, INTER_CUBIC);
+
+			//converts frame to grayscale
 			cvtColor(frame, nextFrame, CV_BGR2GRAY);
 
 			//images for selection
@@ -128,14 +141,16 @@ int main() {
 			setMouseCallback("Optical Flow", roiSelection);
 			waitKey(0);
 
-			//is points have been selected and ROI defined
+			//if points have been selected and ROI defined
 			if (roiPts.size() == funcInt) {
 				//creates ROI and ROI mask
 				roi = frame(roiBox);
 				cvtColor(roi, nextFrame, CV_BGR2GRAY);
-				//cvtColor(roi, roi, COLOR_BGR2HSV);
-				//imshow("roi", result);
-				if (func) nextPts.push_back(roiPts[2]);
+
+				if (func) {
+					nextPts.push_back(roiPts[2]);
+					linPts.push_back(roiPts[2]);
+				}
 			}
 			else {
 				cout << " Error: not enough points selected to form ROI." << endl;
@@ -151,6 +166,12 @@ int main() {
 		prevFrame = nextFrame.clone();		//first frame is the same as last one
 		prevPts = nextPts;
 		cap >> frame;						//gets a new frame from camera
+		
+		//ends tracking if video ends
+		if(!frame.data) {
+			cout << " Video has ended. Tracking Stopped." << endl << endl;
+			break;
+		}
 
 		resize(frame, frame, Size(), 1.5, 1.5, INTER_CUBIC);
 		cvtColor(frame, nextFrame, CV_BGR2GRAY);
@@ -160,33 +181,49 @@ int main() {
 		//calculates optical flow using Lucas-Kanade
 		calcOpticalFlowPyrLK(prevFrame, nextFrame, prevPts, nextPts, status, err);
 
-		//draw ROI rectangle
 		if (!func) {
+			//draws ROI rectangle
 			rectangle(frame, roiPts[0], roiPts[1], Scalar(255, 255, 0), 1);
+		
+
+			//draws motion lines on display
+			for (int i = 0; i < nextPts.size(); i++) {
+				if (status[i]) {
+					x1 = roiPts[0].x + prevPts[i].x;
+					y1 = roiPts[0].y + prevPts[i].y;
+					x2 = roiPts[0].x + nextPts[i].x;
+					y2 = roiPts[0].y + nextPts[i].y;
+
+					/*cout << "PONTOS" << endl;
+					cout << roiPts << endl;
+					cout << prevPts[i] << endl;
+					cout << nextPts[i] << endl << endl;
+
+					cout << x1 << endl;
+					cout << y1 << endl;
+					cout << x2 << endl;
+					cout << y2 << endl << endl;*/
+
+					line(frame, Point(x1, y1), Point(x2, y2), Scalar(255, 255, 0), linesz);
+				}
+			}
 		}
+		else {
+			//stores points in a new vector
+			linPts.push_back(nextPts[0]);
+			//cout << linPts << endl;
+			//cout << linPts.size() << endl << endl;
 
-		//draws motion lines on display
-		for (int i = 0; i < nextPts.size(); i++) {
-			if (status[i]) {
-				x1 = roiPts[0].x + prevPts[i].x;
-				y1 = roiPts[0].y + prevPts[i].y;
-				x2 = roiPts[0].x + nextPts[i].x;
-				y2 = roiPts[0].y + nextPts[i].y;
-
-				cout << "PONTOS" << endl;
-				cout << roiPts << endl;
-				cout << prevPts[i] << endl;
-				cout << nextPts[i] << endl << endl;
-
-				cout << x1 << endl;
-				cout << y1 << endl;
-				cout << x2 << endl;
-				cout << y2 << endl << endl;
-
-				if (func) linesz = 2;
-				else linesz = 1;
-
-				line(frame, Point(x1, y1), Point(x2, y2), Scalar(255, 255, 0), linesz);
+			//draws the path of selected point
+			for (int i = 0; i < linPts.size() - 1; i++) {
+				if (status[0]) {
+					line(frame, linPts[i], linPts[i+1], Scalar(255, 255, 0), linesz);
+					
+					//draws circle at current point position
+					if (i == linPts.size() - 2) {
+						circle(frame, linPts[i+1], 5, Scalar(0, 0, 255), 1);
+					}
+				}
 			}
 		}
 
@@ -195,16 +232,18 @@ int main() {
 		//pauses and exits videos
 		char key = waitKey(33);
 
-		//if "space" pressed, pauses
+		//if "space" pressed, pauses. If "esc" pressed, exits program
 	    if (key == 32) {
-	    	cout << "test" << endl;
 	    	key = 0;
 	    	while (key != 32) {
 	    		imshow("Optical Flow", frame);
 	    		key = waitKey(5);
 	    		if (key == 27) break;
 	    	}
-	    	if (key == 27) break;
+	    	if (key == 27) {
+	    		cout << " Tracking aborted by user. Exiting." << endl << endl;
+	    		break;
+	    	}
 	    	else key = 0;
 	    }
 	    //if "esc" pressed, exits

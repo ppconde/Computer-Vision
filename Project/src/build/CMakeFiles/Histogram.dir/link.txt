@@ -1,1 +1,0 @@
-/usr/bin/c++      CMakeFiles/Histogram.dir/Histogram.cpp.o  -o Histogram -rdynamic 
