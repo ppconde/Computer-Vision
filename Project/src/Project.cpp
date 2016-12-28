@@ -195,7 +195,7 @@ int main(int argc, char** argv) {
 	}
 	else if (func == 1) {
 		funcInt = 3;
-		linesz = 1;
+		linesz = 2;
 
 		cout
 		<< " Select one point of interest with the mouse. A second mouse click will reset the selection." << endl
