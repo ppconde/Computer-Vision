@@ -4,9 +4,11 @@
 using namespace std;
 using namespace cv;
 
+#define RES_SCALE	1.5
 #define STEP 		10
 #define FLOWSZ 		0.5
 #define FB_SCALE	10
+
 
 Mat roiFrame, roiAux;
 Rect roiBox;
@@ -67,24 +69,36 @@ static void roiSelection(int event, int x, int y, int, void*) {
 int main() {
 	int sel;							//video selection
 	int func;							//program function type
+	bool traj = 0;						//trajectory visualization
 	char file[20];
 	int linesz;							//line thickness
 
+	//matrixes declaration
 	Mat frame, prevFrame, nextFrame, roi, flow;
 	UMat flowUMat;
 
+	//vectors  and points declaration
+	vector<Point2f> oriVec;				//orientations vector
 	vector<Point2f> prevPts, nextPts;	//frame features
 	vector<uchar> status;				//status vector
 	vector<float> err;					//error vector
 
-	Point2f flowPt;
+	Point2f flowPt;						//Farneback flow point
 
+	//L-K optical flow configuration
 	int nPts = 2000;					//number of features
 	double qLevel = 0.05;				//quality level
 	double minDist = 0.01;				//min euclidian distance
 
+	//Farneback optical flow configuration
+	float pyrSc = 0.5;					//pyramid scale
+	int levels = 2;						//pyramid levels
+	int winsz = 15;						//averaging window size
+	int iters = 2;						//number of iterations
+	int polyN = 5;						//pix neighborhood size for polynomial expansion
+	float polyS = 1.2;					//gaussian std dev for polynomial expansion
+
 	float x1, y1, x2, y2;				//point coordinates for drawing
-	vector<Point2f> linPts;				//auxilliary vector for point path
 
 	//presents user interface
 	system("clear");		//clears terminal window
@@ -92,9 +106,26 @@ int main() {
 		 << " --------------------------------" << endl
 		 << "  Muscle Movement Quantification " << endl
 		 << " --------------------------------" << endl << endl
+
+	//video file selection
 		 << " Choose video file [1 - ?]: ";
 	cin >> sel;
 	cout << endl;
+
+	//video file
+	VideoCapture cap;
+
+	sprintf(file, "vid/vid%d.mp4", sel);
+	//const char* video = "vid/vid1.mp4";
+	cap.open(file);
+
+	//check if success
+	if (!cap.isOpened()) {
+		cout << " Error: video file could not be loaded. Aborting." << endl << endl;
+		return -1;
+	}
+
+	//analysis method selection
 	cout << " Choose [0 = ROI (L-K), 1 = single point (L-K), 2 = Grid (FB)]: ";
 	cin >> func;
 	cout << endl;
@@ -118,19 +149,11 @@ int main() {
 		<< " Press ENTER when the selection is made." << endl << endl;
 	}
 	else if (func == 2) {
+		linesz = 1;
 		cout << " Farneback selected" << endl << endl;
 	}
-
-	//video file
-	VideoCapture cap;
-
-	sprintf(file, "vid/vid%d.mp4", sel);
-	//const char* video = "vid/vid1.mp4";
-	cap.open(file);
-
-	//check if success
-	if (!cap.isOpened()) {
-		cout << " Error: video file could not be loaded. Aborting." << endl << endl;
+	else {
+		cout << " Error: invalid method choosen. Aborting." << endl << endl;
 		return -1;
 	}
 
@@ -144,7 +167,7 @@ int main() {
 			}
 
 			//resizes video frames for viewing purposes
-			resize(frame, frame, Size(), 1.5, 1.5, INTER_CUBIC);
+			resize(frame, frame, Size(), RES_SCALE, RES_SCALE, INTER_CUBIC);
 
 			//converts frame to grayscale
 			cvtColor(frame, nextFrame, CV_BGR2GRAY);
@@ -167,7 +190,7 @@ int main() {
 
 					if (func) {
 						nextPts.push_back(roiPts[2]);
-						linPts.push_back(roiPts[2]);
+						oriVec.push_back(roiPts[2]);
 					}
 				}
 				else {
@@ -199,7 +222,7 @@ int main() {
 			break;
 		}
 
-		resize(frame, frame, Size(), 1.5, 1.5, INTER_CUBIC);
+		resize(frame, frame, Size(), RES_SCALE, RES_SCALE, INTER_CUBIC);
 		cvtColor(frame, nextFrame, CV_BGR2GRAY);
 
 		if (func == 0 || func == 1) {
@@ -209,49 +232,55 @@ int main() {
 			calcOpticalFlowPyrLK(prevFrame, nextFrame, prevPts, nextPts, status, err);
 
 			if (func == 0) {
+				//calculates orientations vector
+				subtract(nextPts, prevPts, oriVec);
+
 				//draws ROI rectangle
 				rectangle(frame, roiPts[0], roiPts[1], Scalar(255, 255, 0), 1);
-				
+
 				//draws motion lines on display
-				for (unsigned int i = 0; i < nextPts.size(); i++) {
-					if (status[i]) {
-						x1 = roiPts[0].x + prevPts[i].x;
-						y1 = roiPts[0].y + prevPts[i].y;
-						x2 = roiPts[0].x + nextPts[i].x;
-						y2 = roiPts[0].y + nextPts[i].y;
+				if (traj) {
+					for (unsigned int i = 0; i < nextPts.size(); i++) {
+						if (status[i]) {
+							/*x1 = roiPts[0].x + prevPts[i].x;
+							y1 = roiPts[0].y + prevPts[i].y;
+							x2 = roiPts[0].x + nextPts[i].x;
+							y2 = roiPts[0].y + nextPts[i].y;*/
 
-						/*cout << "PONTOS" << endl;
-						cout << roiPts << endl;
-						cout << prevPts[i] << endl;
-						cout << nextPts[i] << endl << endl;
+							x1 = roiPts[0].x + prevPts[i].x;
+							y1 = roiPts[0].y + prevPts[i].y;
+							x2 = x1 + oriVec[i].x*5;
+							y2 = y1 + oriVec[i].y*5;
 
-						cout << x1 << endl;
-						cout << y1 << endl;
-						cout << x2 << endl;
-						cout << y2 << endl << endl;*/
+							/*cout << "PONTOS" << endl;
+							cout << roiPts << endl;
+							cout << prevPts[i] << endl;
+							cout << nextPts[i] << endl << endl;
 
-						line(frame, Point(x1, y1), Point(x2, y2), Scalar(255, 255, 0), linesz);
+							cout << x1 << endl;
+							cout << y1 << endl;
+							cout << x2 << endl;
+							cout << y2 << endl << endl;*/
+
+							line(frame, Point(x1, y1), Point(x2, y2), Scalar(255, 255, 0), linesz);
+						}
 					}
 				}
 			}
 			else {
 				//stores points in a new vector
-				linPts.push_back(nextPts[0]);
-				//cout << linPts << endl;
-				//cout << linPts.size() << endl << endl;
+				oriVec.push_back(nextPts[0]);
 
 				//draws the path of selected point
-				for (unsigned int i = 0; i < linPts.size() - 1; i++) {
-					if (status[0]) {
-						//line(frame, linPts[i], linPts[i+1], Scalar(255, 255, 0), linesz);
-							
-						if (i == linPts.size() - 2) {
+				for (unsigned int i = 0; i < oriVec.size() - 1; i++) {
+					if (status[0]) {	
+						if (i == oriVec.size() - 2) {
 							//draws at current point position
-							line(frame, linPts[i], linPts[i+1], Scalar(0, 0, 255), linesz);
-							//circle(frame, linPts[i+1], 5, Scalar(0, 0, 255), 1);
+							line(frame, oriVec[i], oriVec[i+1], Scalar(0, 0, 255), linesz);
+							//circle(frame, oriVec[i+1], 5, Scalar(0, 0, 255), 1);
 						}
 						else {
-							line(frame, linPts[i], linPts[i+1], Scalar(255, 255, 0), linesz);
+							line(frame, oriVec[i], oriVec[i+1], Scalar(255, 255, 0), linesz);
 						}
 					}
 				}
@@ -259,19 +288,27 @@ int main() {
 		}
 		else {
 			//calculates optical flow using Farneback
-			calcOpticalFlowFarneback(prevFrame, nextFrame, flowUMat, 0.5, 3, 15, 3, 5, 1.2, 0);
+			calcOpticalFlowFarneback(prevFrame, nextFrame, flowUMat, pyrSc, levels, winsz, iters, polyN, polyS, 0);
 
 			flowUMat.copyTo(flow);
+
+			//flushes orientations vector for new frame
+			oriVec.clear();
 
 			//creates flow analysis grid
 			for (int i = 0; i < frame.rows; i += STEP) {
 				for (int j = 0; j < frame.cols; j += STEP) {
 					flowPt = flow.at<Point2f>(i, j)*FB_SCALE;
 
-					if ((flowPt.x > FLOWSZ || flowPt.x < -FLOWSZ) && (flowPt.y > FLOWSZ || flowPt.y < -FLOWSZ)) {
-						line(frame, Point(j, i), Point(j + flowPt.x, i + flowPt.y), Scalar(255, 255, 0));
+					//stores flow in orientations vector
+					oriVec.push_back(flowPt);
+
+					if (traj) {
+						if ((flowPt.x > FLOWSZ || flowPt.x < -FLOWSZ) && (flowPt.y > FLOWSZ || flowPt.y < -FLOWSZ)) {
+							line(frame, Point(j, i), Point(j + flowPt.x, i + flowPt.y), Scalar(255, 255, 0), linesz);
+						}
+						else continue;
 					}
-					else continue;
 				}
 			}
 		}
@@ -296,6 +333,8 @@ int main() {
 	    	}
 	    	else key = 0;
 	    }
+	    //if "S" pressed, shows trajectories
+	    if (key == 's' || key == 'S') traj = !traj;
 	    //if "esc" pressed, exits
 	    if (key == 27) break;
 	}
