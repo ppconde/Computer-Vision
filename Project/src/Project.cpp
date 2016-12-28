@@ -66,12 +66,39 @@ static void roiSelection(int event, int x, int y, int, void*) {
 	}
 }
 
+int ColorSeg(Point2f pt) {
+	int a;
+	//South-East = YELLOW
+	if (pt.x > 0 && pt.y > 0) a = 0;
+	//South-West = CYAN
+	else if (pt.x < 0 && pt.y > 0) a = 1;
+	//North-West = MAGENTA
+	else if (pt.x < 0 && pt.y < 0) a = 2;
+	//North-East = GREEN
+	else if (pt.x > 0 && pt.y < 0) a = 3;
+	//other orientations or no orientation = WHITE
+	else a = 4;
+
+	return a;
+}
+
 int main() {
 	int sel;							//video selection
 	int func;							//program function type
 	bool traj = 0;						//trajectory visualization
 	char file[20];
 	int linesz;							//line thickness
+
+	//color structure for segmentation
+	Scalar color[] =
+    {
+        Scalar(0, 255, 255),			//yellow
+        Scalar(255, 255, 0),			//cyan
+        Scalar(255, 0, 255), 			//magenta
+        Scalar(0, 255, 0),				//green
+        Scalar(255, 255, 255)			//white
+    };
+    int cidx;							//color index
 
 	//matrixes declaration
 	Mat frame, prevFrame, nextFrame, roi, flow;
@@ -86,8 +113,8 @@ int main() {
 	Point2f flowPt;						//Farneback flow point
 
 	//L-K optical flow configuration
-	int nPts = 2000;					//number of features
-	double qLevel = 0.05;				//quality level
+	int nPts = 5000;					//number of features
+	double qLevel = 0.01;				//quality level
 	double minDist = 0.01;				//min euclidian distance
 
 	//Farneback optical flow configuration
@@ -252,17 +279,14 @@ int main() {
 							x2 = x1 + oriVec[i].x*5;
 							y2 = y1 + oriVec[i].y*5;
 
-							/*cout << "PONTOS" << endl;
-							cout << roiPts << endl;
-							cout << prevPts[i] << endl;
-							cout << nextPts[i] << endl << endl;
-
-							cout << x1 << endl;
-							cout << y1 << endl;
-							cout << x2 << endl;
-							cout << y2 << endl << endl;*/
-
-							line(frame, Point(x1, y1), Point(x2, y2), Scalar(255, 255, 0), linesz);
+							//color-based segmentation
+							//NE = GREEN
+							//NW = MAGENTA
+							//SE = YELLOW
+							//SW = CYAN
+							cidx = ColorSeg(oriVec[i]);
+		
+							line(frame, Point(x1, y1), Point(x2, y2), color[cidx], linesz);
 						}
 					}
 				}
@@ -305,7 +329,14 @@ int main() {
 
 					if (traj) {
 						if ((flowPt.x > FLOWSZ || flowPt.x < -FLOWSZ) && (flowPt.y > FLOWSZ || flowPt.y < -FLOWSZ)) {
-							line(frame, Point(j, i), Point(j + flowPt.x, i + flowPt.y), Scalar(255, 255, 0), linesz);
+							//color-based segmentation
+							//NE = GREEN
+							//NW = MAGENTA
+							//SE = YELLOW
+							//SW = CYAN
+							cidx = ColorSeg(flowPt);
+
+							line(frame, Point(j, i), Point(j + flowPt.x, i + flowPt.y), color[cidx], linesz);
 						}
 						else continue;
 					}
