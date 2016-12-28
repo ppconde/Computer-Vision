@@ -142,8 +142,8 @@ int main(int argc, char** argv) {
 		 << endl
 		//help
 		 << " ----- Help -----" << endl
-		 << " After the needed configuration, which will be prompted to the user," << endl
-		 << "a window with the video feed will be displayed." << endl
+		 << " After the needed configuration, which will be prompted to the user, a" << endl
+		 << "window with the video feed will be displayed." << endl
 		 << " The following commands are available:" << endl
 		 << "        Space\t- pauses the video" << endl
 		 << "        S\t- shows movement trajectories (hidden by default)" << endl
@@ -160,7 +160,7 @@ int main(int argc, char** argv) {
 	if (argc == 2) sprintf(file, "%s", argv[1]);
 	else {
 		cout << " No input argument given." << endl
-		 	 << " Choose video file [1, 2 = example files]: ";
+		 	 << " Choose example video file [1, 2]: ";
 		cin >> sel;
 		cout << endl;
 
@@ -179,7 +179,7 @@ int main(int argc, char** argv) {
 	}
 
 	//analysis method selection
-	cout << " Choose [0 = ROI (L-K), 1 = single point (L-K), 2 = Grid (FB)]: ";
+	cout << " Choose analysis method [0 = ROI (L-K), 1 = point (L-K), 2 = grid (FB)]: ";
 	cin >> func;
 	cout << endl;
 
@@ -195,7 +195,7 @@ int main(int argc, char** argv) {
 	}
 	else if (func == 1) {
 		funcInt = 3;
-		linesz = 2;
+		linesz = 1;
 
 		cout
 		<< " Select one point of interest with the mouse. A second mouse click will reset the selection." << endl
@@ -305,11 +305,6 @@ int main(int argc, char** argv) {
 							x2 = x1 + oriVec[i].x*5;
 							y2 = y1 + oriVec[i].y*5;
 
-							//color-based segmentation
-							//NE = GREEN
-							//NW = MAGENTA
-							//SE = YELLOW
-							//SW = CYAN
 							cidx = ColorSeg(oriVec[i]);
 		
 							line(frame, Point(x1, y1), Point(x2, y2), color[cidx], linesz);
@@ -355,11 +350,6 @@ int main(int argc, char** argv) {
 
 					if (traj) {
 						if ((flowPt.x > FLOWSZ || flowPt.x < -FLOWSZ) && (flowPt.y > FLOWSZ || flowPt.y < -FLOWSZ)) {
-							//color-based segmentation
-							//NE = GREEN
-							//NW = MAGENTA
-							//SE = YELLOW
-							//SW = CYAN
 							cidx = ColorSeg(flowPt);
 
 							line(frame, Point(j, i), Point(j + flowPt.x, i + flowPt.y), color[cidx], linesz);
