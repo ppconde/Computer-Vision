@@ -27,11 +27,13 @@ static void roiSelection(int event, int x, int y, int, void*) {
 			//point selection and ROI definition
 			if (cnt <= funcInt) {
 				if (funcInt == 2) {
-					//point selection and display
+					//point selection
 					Point selected = Point(x, y);
 					roiPts.push_back(selected);
 
+					//displays selected point
 					circle(roiFrame, selected, 5, Scalar(0, 0, 255), 1);
+					
 					if (cnt == 2) {
 						//ROI display and storage
 						rectangle(roiFrame, roiPts[0], roiPts[1], Scalar(255, 0, 0), 2);
@@ -39,7 +41,7 @@ static void roiSelection(int event, int x, int y, int, void*) {
 					}
 				}
 				else if (funcInt == 3) {
-					//point selection and display
+					//defines ROI as whole frame
 					Point first = Point(1, 1);
 					roiPts.push_back(first);
 					Point last = Point(roiFrame.size());
@@ -47,11 +49,14 @@ static void roiSelection(int event, int x, int y, int, void*) {
 
 					cnt = cnt + 2;
 
+					//point selection
 					Point selected = Point(x, y);
 					roiPts.push_back(selected);
 
+					//displays selected point
 					circle(roiFrame, selected, 5, Scalar(0, 0, 255), 1);
 
+					//stores ROI
 					roiBox = Rect(roiPts[0], roiPts[1]);
 				}
 			}
@@ -67,6 +72,7 @@ static void roiSelection(int event, int x, int y, int, void*) {
 }
 
 int ColorSeg(Point2f pt) {
+	// This function attributes a color to a vector, taking into account its orientation
 	int a;
 	//South-East = YELLOW
 	if (pt.x > 0 && pt.y > 0) a = 0;
@@ -82,7 +88,7 @@ int ColorSeg(Point2f pt) {
 	return a;
 }
 
-int main() {
+int main(int argc, char** argv) {
 	int sel;							//video selection
 	int func;							//program function type
 	bool traj = 0;						//trajectory visualization
@@ -106,10 +112,9 @@ int main() {
 
 	//vectors  and points declaration
 	vector<Point2f> oriVec;				//orientations vector
-	vector<Point2f> prevPts, nextPts;	//frame features
-	vector<uchar> status;				//status vector
-	vector<float> err;					//error vector
-
+	vector<Point2f> prevPts, nextPts;	//Point to analyze
+	vector<uchar> status;				//L-K status vector
+	vector<float> err;					//L-K error vector
 	Point2f flowPt;						//Farneback flow point
 
 	//L-K optical flow configuration
@@ -125,25 +130,46 @@ int main() {
 	int polyN = 5;						//pix neighborhood size for polynomial expansion
 	float polyS = 1.2;					//gaussian std dev for polynomial expansion
 
-	float x1, y1, x2, y2;				//point coordinates for drawing
+	float x1, y1, x2, y2;				//point coords for drawing
 
 	//presents user interface
 	system("clear");		//clears terminal window
 	cout << endl
+		//title
 		 << " --------------------------------" << endl
 		 << "  Muscle Movement Quantification " << endl
-		 << " --------------------------------" << endl << endl
+		 << " --------------------------------" << endl
+		 << endl
+		//help
+		 << " ----- Help -----" << endl
+		 << " After the needed configuration, which will be prompted to the user," << endl
+		 << "a window with the video feed will be displayed." << endl
+		 << " The following commands are available:" << endl
+		 << "        Space\t- pauses the video" << endl
+		 << "        S\t- shows movement trajectories (hidden by default)" << endl
+		 << "        Esc\t- exits the program" << endl
+		 << " The movement quantification is color coded:" << endl
+		 << "        Green\t- NE (North-East)" << endl
+		 << "        Magenta\t- NW (North-West)" << endl
+		 << "        Cyan\t- SW (South-West)" << endl
+		 << "        Yellow\t- SE (South-East)" << endl
+		 << " ----------------" << endl
+		 << endl;
 
 	//video file selection
-		 << " Choose video file [1 - ?]: ";
-	cin >> sel;
-	cout << endl;
+	if (argc == 2) sprintf(file, "%s", argv[1]);
+	else {
+		cout << " No input argument given." << endl
+		 	 << " Choose video file [1, 2 = example files]: ";
+		cin >> sel;
+		cout << endl;
 
-	//video file
+		sprintf(file, "vid/vid%d.mp4", sel);
+	}
+
+	//video capture declaration
 	VideoCapture cap;
 
-	sprintf(file, "vid/vid%d.mp4", sel);
-	//const char* video = "vid/vid1.mp4";
 	cap.open(file);
 
 	//check if success
