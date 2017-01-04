@@ -237,6 +237,9 @@ int main(int argc, char** argv) {
 					cout << "Error: not enough points selected to form ROI." << endl << endl;
 					return -1;
 				}
+
+				//closes ROI selection window
+				destroyWindow("ROI Selection");
 			}
 			else {
 				prevFrame = nextFrame.clone();
@@ -244,9 +247,6 @@ int main(int argc, char** argv) {
 				//overrides counter
 				cnt = 1;
 			}
-
-			//closes ROI selection window
-			destroyWindow("ROI Selection");
 		}
 
 		if (func == 0) {
@@ -283,6 +283,9 @@ int main(int argc, char** argv) {
 				//draws ROI rectangle
 				rectangle(frame, roiPts[0], roiPts[1], color[4], 1);
 
+				//draws compass
+				drawCompass(frame);
+
 				//draws motion lines on display
 				if (traj) {
 					for (unsigned int i = 0; i < nextPts.size(); i++) {
@@ -300,9 +303,6 @@ int main(int argc, char** argv) {
 						}
 					}
 				}
-				
-				//draws compass
-				drawCompass(frame);
 			}
 			else {
 				//stores points in a new vector
@@ -332,6 +332,9 @@ int main(int argc, char** argv) {
 			//flushes orientations vector for new frame
 			oriVec.clear();
 
+			//draws compass
+			drawCompass(frame);
+			
 			//creates flow analysis grid
 			for (int i = 0; i < frame.rows; i += FBstep) {
 				for (int j = 0; j < frame.cols; j += FBstep) {
@@ -351,9 +354,6 @@ int main(int argc, char** argv) {
 					else continue;
 				}
 			}
-
-			//draws compass
-			drawCompass(frame);
 		}
 
 		//calculates orientation's histogram and displays it
