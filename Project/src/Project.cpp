@@ -23,6 +23,7 @@ using namespace cv;
 
 //pre-processor defines
 #define TRAJ_INIT	0
+#define HIST_INIT	0
 #define RES_SCALE	1.5		//image resizing scale
 #define STEP 		10		//Farneback grid spacing in pix
 #define FLOW_SZ 	0.5		//minimum flow size
@@ -48,7 +49,9 @@ Scalar color[] =
 	Scalar(255, 128, 0),			//"blue"
 	Scalar(255, 0, 128),			//purple
 	Scalar(128, 0, 255),			//pink
-    Scalar(255, 255, 255)			//white
+    Scalar(255, 255, 255),			//white
+    Scalar(0, 0, 0),				//black
+    Scalar(128, 128, 128)			//gray
 };
 int cidx;							//color index
 
@@ -68,6 +71,7 @@ int main(int argc, char** argv) {
 	int sel;							//video selection
 	int func;							//program function type
 	bool traj = TRAJ_INIT;				//trajectory visualization
+	bool hist = HIST_INIT;				//histogram visualization
 	char file[20];
 	int linesz;							//line thickness
 
@@ -115,7 +119,8 @@ int main(int argc, char** argv) {
 		 << "window with the video feed will be displayed." << endl
 		 << " The following commands are available:" << endl
 		 << "\tSpace\t- pauses the video" << endl
-		 << "\tS\t- shows movement trajectories (hidden by default)" << endl
+		 << "\tS\t- toggles movement trajectories (hidden by default)" << endl
+		 << "\tH\t- toggles histogram (hidden by default)" << endl
 		 << "\tEsc\t- exits the program" << endl
 		 << " The movement quantification is color coded:" << endl
 		 << "\tRed\t- E (-22.5º to 22.5º)\tOrange\t- NE (22.5º to 67.5º)" << endl
@@ -276,7 +281,7 @@ int main(int argc, char** argv) {
 				subtract(nextPts, prevPts, oriVec);
 
 				//draws ROI rectangle
-				rectangle(frame, roiPts[0], roiPts[1], Scalar(255, 255, 0), 1);
+				rectangle(frame, roiPts[0], roiPts[1], color[4], 1);
 
 				//draws motion lines on display
 				if (traj) {
@@ -308,11 +313,11 @@ int main(int argc, char** argv) {
 					if (status[0]) {	
 						if (i == oriVec.size() - 2) {
 							//draws at current point position
-							line(frame, oriVec[i], oriVec[i+1], Scalar(0, 0, 255), linesz);
+							line(frame, oriVec[i], oriVec[i+1], color[0], linesz);
 							//circle(frame, oriVec[i+1], 5, Scalar(0, 0, 255), 1);
 						}
 						else {
-							line(frame, oriVec[i], oriVec[i+1], Scalar(255, 255, 0), linesz);
+							line(frame, oriVec[i], oriVec[i+1], color[4], linesz);
 						}
 					}
 				}
@@ -332,18 +337,18 @@ int main(int argc, char** argv) {
 				for (int j = 0; j < frame.cols; j += FBstep) {
 					flowPt = flow.at<Point2f>(i, j)*FB_SCALE;
 
-					if (traj) {
-						if ((flowPt.x > FLOW_SZ || flowPt.x < -FLOW_SZ) && (flowPt.y > FLOW_SZ || flowPt.y < -FLOW_SZ)) {
-							//stores flow in orientations vector
-							oriVec.push_back(flowPt);
+					if ((flowPt.x > FLOW_SZ || flowPt.x < -FLOW_SZ) && (flowPt.y > FLOW_SZ || flowPt.y < -FLOW_SZ)) {
+						//stores flow in orientations vector
+						oriVec.push_back(flowPt);
 
+						if (traj) {
 							//vector color attribution
 							cidx = VecOrientation(flowPt);
 
 							line(frame, Point(j, i), Point(j + flowPt.x, i + flowPt.y), color[cidx], linesz);
 						}
-						else continue;
 					}
+					else continue;
 				}
 			}
 
@@ -351,40 +356,38 @@ int main(int argc, char** argv) {
 			drawCompass(frame);
 		}
 
+		//calculates orientation's histogram and displays it
+		if (hist && func != 1) {
+			Mat histImg;
+
+	    	getHist(histImg, oriVec);
+
+	    	imshow("Orientation's Histogram", histImg);
+		}
+		else destroyWindow("Orientation's Histogram");
+
 		imshow("Movement Tracking", frame);	//shows original capture
 
-		//pauses and exits videos
+		//user input behaviour
 		char key = waitKey(33);
 
-		//if "space" pressed, pauses. If "esc" pressed, exits program
+		//if "space" pressed, pauses
 	    if (key == 32) {
 	    	key = 0;
 
-	    	//calculates orientation's histogram and displays it
-	    	if (func == 0 || func == 2) {
-	    		Mat histImg;
-
-	    		getHist(histImg, oriVec);
-
-	    		imshow("Orientation's Histogram", histImg);
-	    	}
-
 	    	while (key != 32) {
-	    		imshow("Movement Tracking", frame);
 	    		key = waitKey(5);
+
 	    		if (key == 27) break;
 	    	}
-	    	if (key == 27) {
-	    		cout << endl << " Tracking aborted by user. Exiting." << endl << endl;
-	    		break;
-	    	}
-	    	else key = 0;
-
-	    	//closes histogram window
-	    	destroyWindow("Orientation's Histogram");
 	    }
+
 	    //if "S" pressed, toggles trajectories
 	    if (key == 's' || key == 'S') traj = !traj;
+
+	    //if "H" pressed, toggles histogram
+	    if (key == 'h' || key == 'H') hist = !hist;
+
 	    //if "esc" pressed, exits
 	    if (key == 27) {
 	    	cout << endl << " Tracking aborted by user. Exiting." << endl << endl;
@@ -410,11 +413,11 @@ static void roiSelection(int event, int x, int y, int, void*) {
 					roiPts.push_back(selected);
 
 					//displays selected point
-					circle(roiFrame, selected, 5, Scalar(0, 0, 255), 1);
+					circle(roiFrame, selected, 5, color[0], 1);
 					
 					if (cnt == 2) {
 						//ROI display and storage
-						rectangle(roiFrame, roiPts[0], roiPts[1], Scalar(255, 255, 0), 2);
+						rectangle(roiFrame, roiPts[0], roiPts[1], color[4], 2);
 						roiBox = Rect(roiPts[0], roiPts[1]);
 					}
 				}
@@ -432,7 +435,7 @@ static void roiSelection(int event, int x, int y, int, void*) {
 					roiPts.push_back(selected);
 
 					//displays selected point
-					circle(roiFrame, selected, 5, Scalar(0, 0, 255), 1);
+					circle(roiFrame, selected, 5, color[0], 1);
 
 					//stores ROI
 					roiBox = Rect(roiPts[0], roiPts[1]);
@@ -511,21 +514,21 @@ void getHist(Mat& histImg, vector<Point2f> vec) {
 		freq[VecOrientation(vec[i])]++;
 	}
 	
-	//displays histogram elements
+	//displays initial histogram elements
 	int len = 43;
 	line(histImg, Point(len, 0), Point(len, 400), color[8], 1);
 	putText(histImg, "250", Point(10, 348), FONT_HERSHEY_PLAIN, 1, color[8]);
 	line(histImg, Point(len/2, 350), Point(len, 350), color[8], 1);
-	line(histImg, Point(len+1, 350), Point(histW, 350), Scalar(128, 128, 128), 1, 4);
+	line(histImg, Point(len+1, 350), Point(histW, 350), color[10], 1, 4);
 	putText(histImg, "500", Point(10, 298), FONT_HERSHEY_PLAIN, 1, color[8]);
 	line(histImg, Point(len/2, 300), Point(len, 300), color[8], 1);
-	line(histImg, Point(len+1, 300), Point(histW, 300), Scalar(128, 128, 128), 1, 4);
+	line(histImg, Point(len+1, 300), Point(histW, 300), color[10], 1, 4);
 	putText(histImg, "1000", Point(0, 198), FONT_HERSHEY_PLAIN, 1, color[8]);
 	line(histImg, Point(len/2, 200), Point(len, 200), color[8], 1);
-	line(histImg, Point(len+1, 200), Point(histW, 200), Scalar(128, 128, 128), 1, 4);
+	line(histImg, Point(len+1, 200), Point(histW, 200), color[10], 1, 4);
 	putText(histImg, "1500", Point(0, 98), FONT_HERSHEY_PLAIN, 1, color[8]);
 	line(histImg, Point(len/2, 100), Point(len, 100), color[8], 1);
-	line(histImg, Point(len+1, 100), Point(histW, 100), Scalar(128, 128, 128), 1, 4);
+	line(histImg, Point(len+1, 100), Point(histW, 100), color[10], 1, 4);
 
 	//displays histogram bars
 	int binW = cvRound((double)(histW-44)/nbins);	//width of bins
@@ -541,6 +544,13 @@ void getHist(Mat& histImg, vector<Point2f> vec) {
 		stringstream ss;
 		ss << freq[i];
 		string str = ss.str();
-		putText(histImg, str, Point((i+1)*binW, histH-binsz-2), FONT_HERSHEY_PLAIN, 1, color[i]);
+
+		if (binsz <= histH - 15) {
+			putText(histImg, str, Point((i+1)*binW, histH-binsz-2), FONT_HERSHEY_PLAIN, 1, color[i]);
+		}
+		else {
+			putText(histImg, str, Point((i+1)*binW, 20), FONT_HERSHEY_PLAIN, 1, color[9]);
+		}
+		
 	}
 }
