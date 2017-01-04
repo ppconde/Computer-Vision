@@ -14,6 +14,7 @@
 
 #include <iostream>
 #include <sstream>
+//#include <math>
 #include <opencv2/opencv.hpp>
 
 //namespace declaration
@@ -21,13 +22,13 @@ using namespace std;
 using namespace cv;
 
 //pre-processor defines
+#define TRAJ_INIT	0
 #define RES_SCALE	1.5		//image resizing scale
 #define STEP 		10		//Farneback grid spacing in pix
 #define FLOW_SZ 	0.5		//minimum flow size
 #define LK_SCALE	5		//Lucas-Kanade flow scale
 #define FB_SCALE	10		//Farneback flow scale
-
-#define c2str(x)	#x
+#define PI 			3.14159	//pi
 
 //global variables
 Mat roiFrame, roiAux;
@@ -39,10 +40,14 @@ unsigned int funcInt;		//for program function type
 //color structure for segmentation
 Scalar color[] =
 {
-    Scalar(0, 255, 255),			//yellow
-    Scalar(255, 255, 0),			//cyan
-    Scalar(255, 0, 255), 			//magenta
-	Scalar(0, 255, 0),				//green
+    Scalar(0, 0, 255),				//red
+    Scalar(0, 128, 255),			//orange
+    Scalar(0, 255, 128), 			//light green
+	Scalar(128, 255, 0),			//turquoise
+	Scalar(255, 255, 0),			//cyan
+	Scalar(255, 128, 0),			//"blue"
+	Scalar(255, 0, 128),			//purple
+	Scalar(128, 0, 255),			//pink
     Scalar(255, 255, 255)			//white
 };
 int cidx;							//color index
@@ -51,7 +56,7 @@ int cidx;							//color index
 //functions' declaration
 static void roiSelection(int, int, int, int, void*);
 
-int PointLoc(Point2f);
+int VecOrientation(Point2f);
 
 void drawCompass(Mat&);
 
@@ -62,7 +67,7 @@ void getHist(Mat&, vector<Point2f>);
 int main(int argc, char** argv) {
 	int sel;							//video selection
 	int func;							//program function type
-	bool traj = 0;						//trajectory visualization
+	bool traj = TRAJ_INIT;				//trajectory visualization
 	char file[20];
 	int linesz;							//line thickness
 
@@ -104,17 +109,19 @@ int main(int argc, char** argv) {
 		 << endl
 		//help
 		 << " ----- Help -----" << endl
+		 << " It is possible to pass videos as arguments of the program. If a video" << endl
+		 << "is given, it will be analyzed." << endl
 		 << " After the needed configuration, which will be prompted to the user, a" << endl
 		 << "window with the video feed will be displayed." << endl
 		 << " The following commands are available:" << endl
-		 << "        Space\t- pauses the video" << endl
-		 << "        S\t- shows movement trajectories (hidden by default)" << endl
-		 << "        Esc\t- exits the program" << endl
+		 << "\tSpace\t- pauses the video" << endl
+		 << "\tS\t- shows movement trajectories (hidden by default)" << endl
+		 << "\tEsc\t- exits the program" << endl
 		 << " The movement quantification is color coded:" << endl
-		 << "        Green\t- NE (North-East)" << endl
-		 << "        Magenta\t- NW (North-West)" << endl
-		 << "        Cyan\t- SW (South-West)" << endl
-		 << "        Yellow\t- SE (South-East)" << endl
+		 << "\tRed\t- E (-22.5º to 22.5º)\tOrange\t- NE (22.5º to 67.5º)" << endl
+		 << "\tL Green\t- N (67.5º to 112.5º)\tM Green\t- NW (112.5º to 157.5º)" << endl
+		 << "\tCyan\t- W (157.5º to 202.5º)\tBlue\t- SW (202.5º to 247.5º)" << endl
+		 << "\tPurple\t- S (247.5º to 292.5º)\tPink\t- SE (292.5º to 337.5º)" << endl
 		 << " ----------------" << endl
 		 << endl;
 
@@ -282,7 +289,7 @@ int main(int argc, char** argv) {
 							y2 = y1 + oriVec[i].y*LK_SCALE;		// + orientation vcs (w/ scale)
 
 							//vector color attribution
-							cidx = PointLoc(oriVec[i]);
+							cidx = VecOrientation(oriVec[i]);
 		
 							line(frame, Point(x1, y1), Point(x2, y2), color[cidx], linesz);
 						}
@@ -331,7 +338,7 @@ int main(int argc, char** argv) {
 							oriVec.push_back(flowPt);
 
 							//vector color attribution
-							cidx = PointLoc(flowPt);
+							cidx = VecOrientation(flowPt);
 
 							line(frame, Point(j, i), Point(j + flowPt.x, i + flowPt.y), color[cidx], linesz);
 						}
@@ -443,15 +450,33 @@ static void roiSelection(int event, int x, int y, int, void*) {
 }
 
 
-int PointLoc(Point2f pt) {
-	// This function returns an integer value corresponding to the point location
+int VecOrientation(Point2f pt1) {
+	// This function returns an int value corresponding to the vector orientation
 	int a;
 
-	if (pt.x > 0 && pt.y > 0) a = 0;
-	else if (pt.x < 0 && pt.y > 0) a = 1;
-	else if (pt.x < 0 && pt.y < 0) a = 2;
-	else if (pt.x > 0 && pt.y < 0) a = 3;
-	else a = 4;
+	Point2f pt2 = Point(1, 0);		//pt for horizontal vector
+	double l1, l2, dot, ang;		//dot product and lengths
+
+	//vector's angle calculation
+	l1 = sqrt(pt1.x*pt1.x + pt1.y*pt1.y);	//length of vector
+	l2 = pt2.x;								//length of aux vector
+	dot = pt1.x*pt2.x + pt1.y*pt2.y;		//dot product
+
+	float dir = (pt1.cross(pt2) >= 0 ? 1.0 : -1.0);	//direction calculation (+ or -)
+
+	ang = dir*acos(dot/(l1*l2))*180/PI;
+
+	//orientation attribution
+	if (ang >= -22.5 && ang < 22.5) a = 0;
+	else if (ang >= 22.5 && ang < 67.5 ) a = 1;
+	else if (ang >= 67.5 && ang < 112.5) a = 2;
+	else if (ang >= 112.5 && ang < 157.5) a = 3;
+	else if (ang >= 157.5 && ang < 180) a = 4;
+	else if (ang >= -180 && ang < -157.5) a = 4;
+	else if (ang >= -157.5 && ang < -112.5) a = 5;
+	else if (ang >= -112.5 && ang < -67.5) a = 6;
+	else if (ang >= -67.5 && ang < -22.5) a = 7;
+	else a = 8;
 
 	return a;
 }
@@ -459,10 +484,14 @@ int PointLoc(Point2f pt) {
 
 void drawCompass(Mat& frame) {
 	// This function draws a compass at the top left corner of the image
-	arrowedLine(frame, Point(20*RES_SCALE, 20*RES_SCALE), Point(20*RES_SCALE+10*RES_SCALE, 20*RES_SCALE+10*RES_SCALE), color[0], 2);
-	arrowedLine(frame, Point(20*RES_SCALE, 20*RES_SCALE), Point(20*RES_SCALE-10*RES_SCALE, 20*RES_SCALE+10*RES_SCALE), color[1], 2);
-	arrowedLine(frame, Point(20*RES_SCALE, 20*RES_SCALE), Point(20*RES_SCALE-10*RES_SCALE, 20*RES_SCALE-10*RES_SCALE), color[2], 2);
-	arrowedLine(frame, Point(20*RES_SCALE, 20*RES_SCALE), Point(20*RES_SCALE+10*RES_SCALE, 20*RES_SCALE-10*RES_SCALE), color[3], 2);
+	arrowedLine(frame, Point(20*RES_SCALE, 20*RES_SCALE), Point(20*RES_SCALE+12*RES_SCALE, 20*RES_SCALE), color[0], 2);
+	arrowedLine(frame, Point(20*RES_SCALE, 20*RES_SCALE), Point(20*RES_SCALE+10*RES_SCALE, 20*RES_SCALE+10*RES_SCALE), color[7], 2);
+	arrowedLine(frame, Point(20*RES_SCALE, 20*RES_SCALE), Point(20*RES_SCALE, 20*RES_SCALE+12*RES_SCALE), color[6], 2);
+	arrowedLine(frame, Point(20*RES_SCALE, 20*RES_SCALE), Point(20*RES_SCALE-10*RES_SCALE, 20*RES_SCALE+10*RES_SCALE), color[5], 2);
+	arrowedLine(frame, Point(20*RES_SCALE, 20*RES_SCALE), Point(20*RES_SCALE-12*RES_SCALE, 20*RES_SCALE), color[4], 2);
+	arrowedLine(frame, Point(20*RES_SCALE, 20*RES_SCALE), Point(20*RES_SCALE-10*RES_SCALE, 20*RES_SCALE-10*RES_SCALE), color[3], 2);
+	arrowedLine(frame, Point(20*RES_SCALE, 20*RES_SCALE), Point(20*RES_SCALE, 20*RES_SCALE-12*RES_SCALE), color[2], 2);
+	arrowedLine(frame, Point(20*RES_SCALE, 20*RES_SCALE), Point(20*RES_SCALE+10*RES_SCALE, 20*RES_SCALE-10*RES_SCALE), color[1], 2);
 }
 
 
@@ -474,35 +503,36 @@ void getHist(Mat& histImg, vector<Point2f> vec) {
 	histImg = histImage.clone();
 
 	//orientation freq
-	int freq[5] = {0, 0, 0, 0, 0};
+	int nbins = 9;
+	int freq[nbins] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 	//calculates frequency of orientations
 	for (unsigned int i = 0; i < vec.size(); i++) {
-		freq[PointLoc(vec[i])]++;
+		freq[VecOrientation(vec[i])]++;
 	}
 	
 	//displays histogram elements
 	int len = 43;
-	line(histImg, Point(len, 0), Point(len, 400), color[4], 1);
-	putText(histImg, "250", Point(10, 348), FONT_HERSHEY_PLAIN, 1, color[4]);
-	line(histImg, Point(len/2, 350), Point(len, 350), color[4], 1);
+	line(histImg, Point(len, 0), Point(len, 400), color[8], 1);
+	putText(histImg, "250", Point(10, 348), FONT_HERSHEY_PLAIN, 1, color[8]);
+	line(histImg, Point(len/2, 350), Point(len, 350), color[8], 1);
 	line(histImg, Point(len+1, 350), Point(histW, 350), Scalar(128, 128, 128), 1, 4);
-	putText(histImg, "500", Point(10, 298), FONT_HERSHEY_PLAIN, 1, color[4]);
-	line(histImg, Point(len/2, 300), Point(len, 300), color[4], 1);
+	putText(histImg, "500", Point(10, 298), FONT_HERSHEY_PLAIN, 1, color[8]);
+	line(histImg, Point(len/2, 300), Point(len, 300), color[8], 1);
 	line(histImg, Point(len+1, 300), Point(histW, 300), Scalar(128, 128, 128), 1, 4);
-	putText(histImg, "1000", Point(0, 198), FONT_HERSHEY_PLAIN, 1, color[4]);
-	line(histImg, Point(len/2, 200), Point(len, 200), color[4], 1);
+	putText(histImg, "1000", Point(0, 198), FONT_HERSHEY_PLAIN, 1, color[8]);
+	line(histImg, Point(len/2, 200), Point(len, 200), color[8], 1);
 	line(histImg, Point(len+1, 200), Point(histW, 200), Scalar(128, 128, 128), 1, 4);
-	putText(histImg, "1500", Point(0, 98), FONT_HERSHEY_PLAIN, 1, color[4]);
-	line(histImg, Point(len/2, 100), Point(len, 100), color[4], 1);
+	putText(histImg, "1500", Point(0, 98), FONT_HERSHEY_PLAIN, 1, color[8]);
+	line(histImg, Point(len/2, 100), Point(len, 100), color[8], 1);
 	line(histImg, Point(len+1, 100), Point(histW, 100), Scalar(128, 128, 128), 1, 4);
 
 	//displays histogram bars
-	int binW = cvRound((double)(histW-44)/5);	//width of bins
-	int maxVal = 2000;							//frequency max value (can actually be higher!)
+	int binW = cvRound((double)(histW-44)/nbins);	//width of bins
+	int maxVal = 2000;								//frequency max value (can actually be higher!)
 
-	for (int i = 0; i < 5; i++) {
-		int binsz = freq[i]*histH/maxVal;		//bin height
+	for (int i = 0; i < nbins; i++) {
+		int binsz = freq[i]*histH/maxVal;			//bin height
 
 		//draws bin
 		rectangle(histImg, Point(len+1+i*binW, histH), Point(len+(i+1)*binW, histH-binsz), color[i], CV_FILLED);
@@ -511,6 +541,6 @@ void getHist(Mat& histImg, vector<Point2f> vec) {
 		stringstream ss;
 		ss << freq[i];
 		string str = ss.str();
-		putText(histImg, str, Point((i+1)*binW-len, histH-binsz-2), FONT_HERSHEY_PLAIN, 1, color[i]);
+		putText(histImg, str, Point((i+1)*binW, histH-binsz-2), FONT_HERSHEY_PLAIN, 1, color[i]);
 	}
 }
