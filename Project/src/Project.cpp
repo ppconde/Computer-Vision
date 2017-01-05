@@ -14,7 +14,6 @@
 
 #include <iostream>
 #include <sstream>
-//#include <math>
 #include <opencv2/opencv.hpp>
 
 //namespace declaration
@@ -73,10 +72,12 @@ int main(int argc, char** argv) {
 	bool traj = TRAJ_INIT;				//trajectory visualization
 	bool hist = HIST_INIT;				//histogram visualization
 	char file[20];
+	char auxch[50];
 	int linesz;							//line thickness
+	bool drmed = 0;
 
 	//matrixes declaration
-	Mat frame, prevFrame, nextFrame, roi, flow;
+	Mat frame, prevFrame, nextFrame, roi, flow, auxFrame;
 	UMat flowUMat;
 
 	//vectors  and points declaration
@@ -257,17 +258,32 @@ int main(int argc, char** argv) {
 		//initializes prevPts vector
 		if (func == 0 || func == 1) prevPts = nextPts;
 
+		//stores last frame analysis
+		if (func == 1) {
+			auxFrame = frame.clone(); 
+		}
+
 		prevFrame = nextFrame.clone();		//first frame is the same as last one
 		cap >> frame;						//gets a new frame from camera
 			
 		//ends tracking if video ends
 		if(!frame.data) {
+			if (func == 1) {
+				imshow("Movement Tracking", auxFrame);
+				waitKey(0);
+			}
+			
 			cout << endl << " Video has ended. Tracking Stopped." << endl << endl;
 			break;
 		}
 
-		//resizes and converts to grayscale
+		//resizesconverts to grayscale
 		resize(frame, frame, Size(), RES_SCALE, RES_SCALE, INTER_CUBIC);
+		
+		//stores original resized frame
+		if (func == 0 || func == 2) auxFrame = frame.clone();
+
+		//converts to grayscale
 		cvtColor(frame, nextFrame, CV_BGR2GRAY);
 
 		if (func == 0 || func == 1) {
@@ -287,20 +303,18 @@ int main(int argc, char** argv) {
 				drawCompass(frame);
 
 				//draws motion lines on display
-				if (traj) {
-					for (unsigned int i = 0; i < nextPts.size(); i++) {
-						if (status[i]) {
-							//defines lines' points
-							x1 = roiPts[0].x + prevPts[i].x;	//initial pts
-							y1 = roiPts[0].y + prevPts[i].y;
-							x2 = x1 + oriVec[i].x*LK_SCALE;		//final pts = initial pts +
-							y2 = y1 + oriVec[i].y*LK_SCALE;		// + orientation vcs (w/ scale)
+				for (unsigned int i = 0; i < nextPts.size(); i++) {
+					if (status[i]) {
+						//defines lines' points
+						x1 = roiPts[0].x + prevPts[i].x;	//initial pts
+						y1 = roiPts[0].y + prevPts[i].y;
+						x2 = x1 + oriVec[i].x*LK_SCALE;		//final pts = initial pts +
+						y2 = y1 + oriVec[i].y*LK_SCALE;		// + orientation vcs (w/ scale)
 
-							//vector color attribution
-							cidx = VecOrientation(oriVec[i]);
+						//vector color attribution
+						cidx = VecOrientation(oriVec[i]);
 		
-							line(frame, Point(x1, y1), Point(x2, y2), color[cidx], linesz);
-						}
+						line(frame, Point(x1, y1), Point(x2, y2), color[cidx], linesz);
 					}
 				}
 			}
@@ -344,12 +358,10 @@ int main(int argc, char** argv) {
 						//stores flow in orientations vector
 						oriVec.push_back(flowPt);
 
-						if (traj) {
-							//vector color attribution
-							cidx = VecOrientation(flowPt);
+						//vector color attribution
+						cidx = VecOrientation(flowPt);
 
-							line(frame, Point(j, i), Point(j + flowPt.x, i + flowPt.y), color[cidx], linesz);
-						}
+						line(frame, Point(j, i), Point(j + flowPt.x, i + flowPt.y), color[cidx], linesz);
 					}
 					else continue;
 				}
@@ -366,7 +378,8 @@ int main(int argc, char** argv) {
 		}
 		else destroyWindow("Orientation's Histogram");
 
-		imshow("Movement Tracking", frame);	//shows original capture
+		if (traj) imshow("Movement Tracking", frame);	//shows frame with flow
+		else imshow("Movement Tracking", auxFrame);		//shows original capture
 
 		//user input behaviour
 		char key = waitKey(33);
@@ -378,9 +391,58 @@ int main(int argc, char** argv) {
 	    	while (key != 32) {
 	    		key = waitKey(5);
 
+	    		//shows median of all orientations
+	    		if (func == 0 || func == 2) {
+	    			if (!drmed) {
+	    				drmed = 1;
+
+	    				//calculates median of vectors
+		    			Scalar oriAux = sum(oriVec);
+		    			oriAux[0] = oriAux[0]/oriVec.size();
+		    			oriAux[1] = oriAux[1]/oriVec.size();
+		    			
+		    			cidx = VecOrientation(Point(oriAux[0], oriAux[1]));
+		    			
+		    			//displays vector
+		    			arrowedLine(auxFrame, Point(auxFrame.cols/2, auxFrame.rows/2),
+		    				Point(frame.cols/2+oriAux[0]*10, frame.rows/2+oriAux[1]*10), color[cidx], 2);
+	    				
+	    				//displays vector value
+	    				putText(auxFrame, "(x, y) =", Point(10, 25), FONT_HERSHEY_PLAIN, 1, color[8]);
+	    				sprintf(auxch, "(%.2f,", oriAux[0]);
+	    				putText(auxFrame, auxch, Point(10, 40), FONT_HERSHEY_PLAIN, 1, color[8]);
+	    				sprintf(auxch, "%.2f)", oriAux[1]);
+	    				putText(auxFrame, auxch, Point(15, 55), FONT_HERSHEY_PLAIN, 1, color[8]);
+	    			}
+	    		}
+
+	    		//displays frame
+	    		if (traj) imshow("Movement Tracking", frame);
+				else imshow("Movement Tracking", auxFrame);
+
+	    		//checks for trajectory toggle
+				if (key == 's' || key == 'S') traj = !traj;
+
+	    		//checks for histogram toggle
+	    		if (key == 'h' || key == 'H') {
+	    			if (hist && func != 1) {
+	    				hist = 0;
+						destroyWindow("Orientation's Histogram");
+					}
+					else {
+						hist = 1;
+						Mat histImg;
+				    	getHist(histImg, oriVec);
+				    	imshow("Orientation's Histogram", histImg);
+					}
+				}
+
 	    		if (key == 27) break;
 	    	}
 	    }
+
+	    //resets drmed
+	    drmed = 0;
 
 	    //if "S" pressed, toggles trajectories
 	    if (key == 's' || key == 'S') traj = !traj;
@@ -474,7 +536,7 @@ int VecOrientation(Point2f pt1) {
 	else if (ang >= 22.5 && ang < 67.5 ) a = 1;
 	else if (ang >= 67.5 && ang < 112.5) a = 2;
 	else if (ang >= 112.5 && ang < 157.5) a = 3;
-	else if (ang >= 157.5 && ang < 180) a = 4;
+	else if (ang >= 157.5 && ang <= 180) a = 4;
 	else if (ang >= -180 && ang < -157.5) a = 4;
 	else if (ang >= -157.5 && ang < -112.5) a = 5;
 	else if (ang >= -112.5 && ang < -67.5) a = 6;
