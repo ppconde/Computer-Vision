@@ -4,6 +4,7 @@
 /*			COMPUTER VISION PROJECT 		 */
 /*											 */
 /*	Authors: Andre Saraiva					 */
+/*           Pedro Conde                     */
 /*											 */
 /*	Date:	 January 2017					 */
 /*											 */
@@ -242,12 +243,7 @@ int main(int argc, char** argv) {
 				//closes ROI selection window
 				destroyWindow("ROI Selection");
 			}
-			else {
-				prevFrame = nextFrame.clone();
-
-				//overrides counter
-				cnt = 1;
-			}
+			else cnt = 1;	//overrides counter
 		}
 
 		if (func == 0) {
