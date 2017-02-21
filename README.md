@@ -1,11 +1,11 @@
-### cv1617-60623
+### Neuromuscular Tracking System with Ultrasound
 
-# Computer Vision
+# Master Thesis
 
 
-This repository is destined to be used in the development of projects and exercises associated with the subject Computer Vision, taught at Universidade de Aveiro, Portugal.
+This repository is destined to be used in the development of the project Neuromuscular Tracking System with Ultrasound, developed in University of Aveiro, Portugal.
 
-These projects use C++ as a programming language, taking advantage of an extensive function library used specifically for computer vision, OpenCV.
+This project uses C++ as a programming language, taking advantage of an extensive function library used specifically for computer vision, OpenCV.
 
 The folders are organized as follows:
 ```
@@ -124,3 +124,6 @@ Home Dir (eg. Aula1)
 	- Slow but more robust than simple matching, because it checks for scale.
 * FaceDetect
 	- Detects faces and eyes in an image.
+	
+## Tese
+* 
