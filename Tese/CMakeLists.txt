@@ -1,19 +1,22 @@
 cmake_minimum_required(VERSION 2.8)
-project(ProjectName)
-set(PCL_DIR "/usr/local/pcl-1.8.0/share/pcl-1.8")
-message("\n==> Finding 3rd Party Packages")
-find_package(OpenCV REQUIRED)
-find_package(PCL 1.2 REQUIRED)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -W")
-set(CMAKE_C_FLAGS_RELEASE "-O3")
-set(CMAKE_C_FLAGS_DEBUG "-g3")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3")
-set(CMAKE_CXX_FLAGS_DEBUG "-g3")
-set(BASE_DIR ${CMAKE_SOURCE_DIR})
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${BASE_DIR}/bin)
-include_directories(${OpenCV_INCLUDE_DIR})
-include_directories(${PCL_INCLUDE_DIRS})
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
-add_subdirectory( src )
+project( ProjectName )
+
+MESSAGE ("\n==> Finding 3rd Party Packages")
+find_package( OpenCV REQUIRED )
+
+SET( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -W" )
+SET( CMAKE_C_FLAGS_RELEASE "-O3" )
+SET( CMAKE_C_FLAGS_DEBUG "-g3" )
+
+SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall" )
+SET( CMAKE_CXX_FLAGS_RELEASE "-O3" )
+SET( CMAKE_CXX_FLAGS_DEBUG "-g3" )
+
+SET( BASE_DIR ${CMAKE_SOURCE_DIR} )
+SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${BASE_DIR}/bin )
+
+# Make include directories available for all..
+INCLUDE_DIRECTORIES( ${OpenCV_INCLUDE_DIR} )
+
+# Add sources directory
+ADD_SUBDIRECTORY( src )
