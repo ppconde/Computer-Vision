@@ -15,6 +15,21 @@
 #include <iostream>
 #include <sstream>
 #include <opencv2/opencv.hpp>
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include "opencv2/imgproc.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
+#include <iostream>
+#include <sstream>
+#include <opencv2/opencv.hpp>
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include "opencv2/imgproc.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
 //namespace declaration
 using namespace std;
@@ -43,11 +58,11 @@ Scalar color[] =
     Scalar(0, 0, 255),				//red
     Scalar(0, 128, 255),			//orange
     Scalar(0, 255, 128), 			//light green
-	Scalar(128, 255, 0),			//turquoise
-	Scalar(255, 255, 0),			//cyan
-	Scalar(255, 128, 0),			//"blue"
-	Scalar(255, 0, 128),			//purple
-	Scalar(128, 0, 255),			//pink
+	  Scalar(128, 255, 0),			//turquoise
+	  Scalar(255, 255, 0),			//cyan
+	  Scalar(255, 128, 0),			//"blue"
+	  Scalar(255, 0, 128),			//purple
+	  Scalar(128, 0, 255),			//pink
     Scalar(255, 255, 255),			//white
     Scalar(0, 0, 0),				//black
     Scalar(128, 128, 128)			//gray
@@ -474,9 +489,13 @@ static void roiSelection(int event, int x, int y, int, void*) {
 					if (cnt>=2 && enter == 13)
           {
 						//ROI display and storage
-            for(int i=0; i<roiPts.size()-1; i++)
+            vector <vector<Point> > contourElement;
+            for (int counter = 0; counter < roiPts.size(); counter++)
             {
-              line(roiFrame, roiPts[i], roiPts[i+1], (255,0,0), 1, 8, 0);
+              vector<Point> tmp = contourElement.at(0);
+              const Point* elementPoints[1] = {&tmp[0]};
+              int numberOfPoints = (int)tmp.size();
+              fillPoly(roiFrame, &elementPoints, numberOfPoints, 1, Scalar( 255, 255, 255 ), 8);
             }
 						/*rectangle(roiFrame, roiPts[0], roiPts[1], color[4], 2);
 						roiBox = Rect(roiPts[0], roiPts[1]);*/
