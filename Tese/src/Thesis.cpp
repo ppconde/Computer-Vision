@@ -19,17 +19,6 @@
 #include <opencv2/highgui/highgui.hpp>
 #include "opencv2/imgproc.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
-#include <iostream>
-#include <sstream>
-#include <opencv2/opencv.hpp>
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include "opencv2/imgproc.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
 
 //namespace declaration
 using namespace std;
@@ -51,6 +40,7 @@ Rect roiBox;
 vector<Point2f> roiPts;		//points defining a ROI
 unsigned int cnt = 0;		//mouse clicks counter
 unsigned int funcInt;		//for program function type
+bool enter = 0;     //Detect enter key press
 
 //color structure for segmentation
 Scalar color[] =
@@ -476,30 +466,34 @@ static void roiSelection(int event, int x, int y, int, void*) {
 	switch (event) {
 		case CV_EVENT_LBUTTONDOWN:
 			cnt++;
-
 			//point selection and ROI definition
 				if (funcInt == 2) {
+          cout << "\nEntrou em funcInt = 2\n";
 					//point selection
 					Point selected = Point(x, y);
 					roiPts.push_back(selected);
 
 					//displays selected point
 					circle(roiFrame, selected, 5, color[0], 1);
-          int enter = waitKey(1);
-					if (cnt>=2 && enter == 13)
+          imshow("ROI Selection", roiFrame);
+          int key = waitKey(30000);   //Não pode ser com isto
+          if (cnt>=2 && key==13)
           {
-						//ROI display and storage
-            vector <vector<Point> > contourElement;
-            for (int counter = 0; counter < roiPts.size(); counter++)
+            cout << "\nEntrou em if cnt<=2 e enter\n";
+            //ROI display and storage
+            vector <int> hull;
+            convexHull(roiPts, hull, true);
+            int hullcount = (int)hull.size();
+            Point pt0 = roiPts[hull[hullcount-1]];
+            for( int i = 0; i < hullcount; i++ )
             {
-              vector<Point> tmp = contourElement.at(0);
-              const Point* elementPoints[1] = {&tmp[0]};
-              int numberOfPoints = (int)tmp.size();
-              fillPoly(roiFrame, &elementPoints, numberOfPoints, 1, Scalar( 255, 255, 255 ), 8);
+              cout << "\nEntrou no ciclo for\n";
+                Point pt = roiPts[hull[i]];
+                line(roiFrame, pt0, pt, Scalar(0, 255, 0), 1,LINE_AA);
+                pt0 = pt;
             }
-						/*rectangle(roiFrame, roiPts[0], roiPts[1], color[4], 2);
-						roiBox = Rect(roiPts[0], roiPts[1]);*/
-					}
+          }
+          imshow("ROI Selection", roiFrame);
 				}
 				else if (funcInt == 3) {
 					//defines ROI as whole frame
@@ -519,8 +513,8 @@ static void roiSelection(int event, int x, int y, int, void*) {
 
 					//stores ROI
 					roiBox = Rect(roiPts[0], roiPts[1]);
+          imshow("ROI Selection", roiFrame);
 				}
-      imshow("ROI Selection", roiFrame);
       break;
 
     case CV_EVENT_RBUTTONDOWN:
