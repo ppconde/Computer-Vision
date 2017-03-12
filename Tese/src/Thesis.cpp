@@ -476,24 +476,26 @@ static void roiSelection(int event, int x, int y, int, void*) {
 					//displays selected point
 					circle(roiFrame, selected, 5, color[0], 1);
           imshow("ROI Selection", roiFrame);
-          int key = waitKey(30000);   //Não pode ser com isto
-          if (cnt>=2 && key==13)
-          {
-            cout << "\nEntrou em if cnt<=2 e enter\n";
-            //ROI display and storage
-            vector <int> hull;
-            convexHull(roiPts, hull, true);
-            int hullcount = (int)hull.size();
-            Point pt0 = roiPts[hull[hullcount-1]];
-            for( int i = 0; i < hullcount; i++ )
-            {
-              cout << "\nEntrou no ciclo for\n";
-                Point pt = roiPts[hull[i]];
-                line(roiFrame, pt0, pt, Scalar(0, 255, 0), 1,LINE_AA);
-                pt0 = pt;
-            }
-          }
-          imshow("ROI Selection", roiFrame);
+
+          cout << "\nEntrou em roiPts.size + ROI defined\n";
+          //ROI display and storage
+          vector <int> hull;
+          convexHull(roiPts, hull, true);
+          vector<RotatedRect> minRect( hull.size() );
+          
+          /*
+          int hullcount = (int)hull.size();
+          Point pt0 = roiPts[hull[hullcount-1]];
+          for( int i = 0; i < hullcount; i++)
+              {
+                  cout << "\nEntrou no ciclo for\n";
+                  Point pt = roiPts[hull[i]];
+                  line(roiFrame, pt0, pt, Scalar(0, 255, 0), 1,LINE_AA);
+                  pt0 = pt;
+              }
+            */
+          //Fit bounding rectangle
+          boundingRect(hull);   //INCOMPLETO
 				}
 				else if (funcInt == 3) {
 					//defines ROI as whole frame
@@ -513,8 +515,8 @@ static void roiSelection(int event, int x, int y, int, void*) {
 
 					//stores ROI
 					roiBox = Rect(roiPts[0], roiPts[1]);
-          imshow("ROI Selection", roiFrame);
 				}
+        imshow("ROI Selection", roiFrame);
       break;
 
     case CV_EVENT_RBUTTONDOWN:
