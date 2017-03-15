@@ -55,9 +55,10 @@ Scalar color[] =
 	  Scalar(255, 128, 0),			//"blue"
 	  Scalar(255, 0, 128),			//purple
 	  Scalar(128, 0, 255),			//pink
-    Scalar(255, 255, 255),			//white
-    Scalar(0, 0, 0),				//black
-    Scalar(128, 128, 128)			//gray
+    Scalar(255, 255, 255),		//white
+    Scalar(0, 0, 0),				  //black
+    Scalar(128, 128, 128),			//gray
+    Scalar(0, 255, 255)       //Yellow
 };
 int cidx;							//color index
 
@@ -384,7 +385,7 @@ int main(int argc, char** argv) {
 
           for(unsigned int k = 1; k < points.size(); k++)
           {
-            line(frame, points[k-1], points[k], (k == points.size() - 1) ? color[0] : color[4], linesz);
+            line(frame, points[k-1], points[k], (k == points.size() - 1) ? color[11] : color[VecOrientation(points[k])], linesz);
           }
 
         }
