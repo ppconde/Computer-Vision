@@ -38,9 +38,11 @@ using namespace cv;
 Mat roiFrame, roiAux;
 Rect roiBox;
 vector<Point2f> roiPts;		//points defining a ROI
+vector<Point2f> actualPts;
+vector<vector <Point2f> > pointsHistory; //Point history
+
 unsigned int cnt = 0;		//mouse clicks counter
-unsigned int funcInt;		//for program function type
-bool enter = 0;     //Detect enter key press
+unsigned int funcInt;		//for program function
 
 //color structure for segmentation
 Scalar color[] =
@@ -170,7 +172,7 @@ int main(int argc, char** argv) {
 
 		cout << endl
 			 << " Select two points to define ROI with the mouse. A third mouse click will reset the selection." << endl
-			 << " Press ENTER when the selection is made." << endl;
+    			 << " Press ENTER when the selection is made." << endl;
 
 	}
 	else if (func == 1) {
@@ -225,8 +227,40 @@ int main(int argc, char** argv) {
 				//mouse callback for selecting ROI
 				imshow("ROI Selection", roiFrame);
 				setMouseCallback("ROI Selection", roiSelection);
-				waitKey(0);
+        waitKey(0);
 
+        for(unsigned int k = 0; k < roiPts.size(); k++)
+        {
+            pointsHistory.push_back(vector<Point2f>());
+        }
+
+        /*
+        vector<vector<Point> > contours_poly( roiPts.size() );
+        //Draw Region of Interest with selected points
+        for(size_t i = 0; i<roiPts.size(); i++)
+        {
+          polylines(roiFrame, roiPts[i], contours_poly[i], 1, color[2], 1, LINE_8, 0);
+        }
+
+        imshow("ROI Selection", roiFrame);
+        waitKey(0);
+        */
+
+        Mat drawing = Mat::zeros(roiBox.size(), CV_8UC3);
+
+        vector<Rect> boundRect( roiPts.size() );
+        /*
+        //Cálculo do rectâgulo aproximado aos pontos selecionados
+        for (size_t i = 0; i < roiPts.size(); i++)
+        {
+          approxPolyDP( Mat(roiPts[i]), contours_poly[i], 3, true );
+          boundRect[i] = boundingRect( Mat(contours_poly[i]) );
+        }
+        for( size_t i = 0; i< roiPts.size(); i++ )
+           {
+             rectangle( drawing, boundRect[i].tl(), boundRect[i].br(), color[i], 2, 8, 0 );
+           }
+           */
 				//if points have been selected and ROI defined
 				if (roiPts.size() >= funcInt) {
 					//creates ROI and ROI mask
@@ -234,9 +268,13 @@ int main(int argc, char** argv) {
 					cvtColor(roi, nextFrame, CV_BGR2GRAY);
 
 					if (func == 1) {
-						//prepares vectors for point tracking
-						nextPts.push_back(roiPts[2]);
-						oriVec.push_back(roiPts[2]);
+            cout << "roiPts size: "<< roiPts.size()<<endl;
+            for(size_t i=2; i<=roiPts.size()-1; i=i+3)
+            {
+              //prepares vectors for point tracking
+              nextPts.push_back(roiPts[i]);
+              oriVec.push_back(roiPts[i]);
+            }
 					}
 				}
 				else {
@@ -253,14 +291,17 @@ int main(int argc, char** argv) {
 		if (func == 0) {
 			//gets image features
 			goodFeaturesToTrack(nextFrame, nextPts, nPts, qLevel, minDist);
+      //initializes prevPts.vector
+      prevPts = nextPts;
 		}
 
-		//initializes prevPts vector
-		if (func == 0 || func == 1) prevPts = nextPts;
-
-		//stores last frame analysis
 		if (func == 1) {
-			auxFrame = frame.clone();
+      //initializes prevPts vector
+      prevPts = nextPts;
+      //stores last frame analysis
+      auxFrame = frame.clone();
+      //cout << "prevPts: "<< prevPts << endl;
+      //waitKey(0);
 		}
 
 		prevFrame = nextFrame.clone();		//first frame is the same as last one
@@ -272,7 +313,6 @@ int main(int argc, char** argv) {
 				imshow("Movement Tracking", auxFrame);
 				waitKey(0);
 			}
-
 			cout << endl << " Video has ended. Tracking Stopped." << endl << endl;
 			break;
 		}
@@ -290,7 +330,21 @@ int main(int argc, char** argv) {
 			nextFrame = nextFrame(roiBox);
 
 			//calculates optical flow using Lucas-Kanade
-			calcOpticalFlowPyrLK(prevFrame, nextFrame, prevPts, nextPts, status, err);
+      if(func == 0)
+      {
+        calcOpticalFlowPyrLK(prevFrame, nextFrame, prevPts, nextPts, status, err);
+			}
+      else if(func == 1)
+      {
+        for(unsigned int k = 0; k < actualPts.size(); k++)
+        {
+            pointsHistory[k].push_back(actualPts[k]);
+        }
+
+        vector<Point2f> out;
+        calcOpticalFlowPyrLK(prevFrame, nextFrame, actualPts, out, status, err);
+        actualPts = out;
+      }
 
 			if (func == 0) {
 				//calculates orientations vector
@@ -306,7 +360,7 @@ int main(int argc, char** argv) {
 				for (unsigned int i = 0; i < nextPts.size(); i++) {
 					if (status[i]) {
 						//defines lines' points
-						x1 = roiPts[0].x + prevPts[i].x;	//initial pts
+            x1 = roiPts[0].x + prevPts[i].x;	//initial pts
 						y1 = roiPts[0].y + prevPts[i].y;
 						x2 = x1 + oriVec[i].x*LK_SCALE;		//final pts = initial pts +
 						y2 = y1 + oriVec[i].y*LK_SCALE;		// + orientation vcs (w/ scale)
@@ -318,23 +372,22 @@ int main(int argc, char** argv) {
 					}
 				}
 			}
-			else {
-				//stores points in a new vector
-				oriVec.push_back(nextPts[0]);
+			else
+      {
+        /*for(unsigned int i = 0; i < roiPts.size(); i++)
+        {
+          line(frame, roiPts[i], actualPts[i], color[4], linesz);
+        }*/
+        for(unsigned int i = 0; i < pointsHistory.size(); i++)
+        {
+          vector < Point2f > points = pointsHistory[i];
 
-				//draws the path of selected point
-				for (unsigned int i = 0; i < oriVec.size() - 1; i++) {
-					if (status[0]) {
-						if (i == oriVec.size() - 2) {
-							//draws at current point position
-							line(frame, oriVec[i], oriVec[i+1], color[0], linesz);
-							//circle(frame, oriVec[i+1], 5, Scalar(0, 0, 255), 1);
-						}
-						else {
-							line(frame, oriVec[i], oriVec[i+1], color[4], linesz);
-						}
-					}
-				}
+          for(unsigned int k = 1; k < points.size(); k++)
+          {
+            line(frame, points[k-1], points[k], (k == points.size() - 1) ? color[0] : color[4], linesz);
+          }
+
+        }
 			}
 		}
 		else {
@@ -404,8 +457,7 @@ int main(int argc, char** argv) {
 		    			cidx = VecOrientation(Point(oriAux[0], oriAux[1]));
 
 		    			//displays vector
-		    			arrowedLine(auxFrame, Point(auxFrame.cols/2, auxFrame.rows/2),
-		    				Point(frame.cols/2+oriAux[0]*10, frame.rows/2+oriAux[1]*10), color[cidx], 2);
+		    			arrowedLine(auxFrame, Point(auxFrame.cols/2, auxFrame.rows/2), Point(frame.cols/2+oriAux[0]*10, frame.rows/2+oriAux[1]*10), color[cidx], 2);
 
 	    				//displays vector value
 	    				putText(auxFrame, "(x, y) =", Point(10, 25), FONT_HERSHEY_PLAIN, 1, color[8]);
@@ -476,45 +528,21 @@ static void roiSelection(int event, int x, int y, int, void*) {
 					//displays selected point
 					circle(roiFrame, selected, 5, color[0], 1);
           imshow("ROI Selection", roiFrame);
-
-          cout << "\nEntrou em roiPts.size + ROI defined\n";
-          //ROI display and storage
-          vector <int> hull;
-          convexHull(roiPts, hull, true);
-          vector<RotatedRect> minRect( hull.size() );
-          
-          /*
-          int hullcount = (int)hull.size();
-          Point pt0 = roiPts[hull[hullcount-1]];
-          for( int i = 0; i < hullcount; i++)
-              {
-                  cout << "\nEntrou no ciclo for\n";
-                  Point pt = roiPts[hull[i]];
-                  line(roiFrame, pt0, pt, Scalar(0, 255, 0), 1,LINE_AA);
-                  pt0 = pt;
-              }
-            */
-          //Fit bounding rectangle
-          boundingRect(hull);   //INCOMPLETO
 				}
 				else if (funcInt == 3) {
-					//defines ROI as whole frame
-					Point first = Point(1, 1);
-					roiPts.push_back(first);
-					Point last = Point(roiFrame.size());
-					roiPts.push_back(last);
-
-					cnt = cnt + 2;
+					cnt++;
 
 					//point selection
 					Point selected = Point(x, y);
 					roiPts.push_back(selected);
 
+          actualPts.push_back(Point(x, y));
+
 					//displays selected point
 					circle(roiFrame, selected, 5, color[0], 1);
 
 					//stores ROI
-					roiBox = Rect(roiPts[0], roiPts[1]);
+					roiBox = Rect(Point(1, 1), Point(roiFrame.size()));
 				}
         imshow("ROI Selection", roiFrame);
       break;
