@@ -19,7 +19,6 @@
 #include <opencv2/highgui/highgui.hpp>
 #include "opencv2/imgproc.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
-#include <vector>
 
 //namespace declaration
 using namespace std;
@@ -41,7 +40,6 @@ Rect roiBox;
 vector<Point2f> roiPts;		//points defining a ROI
 vector<Point2f> actualPts;
 vector<vector <Point2f> > pointsHistory; //Point history
-vector <vector <Point> > contours_poly;
 
 unsigned int cnt = 0;		//mouse clicks counter
 unsigned int funcInt;		//for program function
@@ -91,7 +89,6 @@ int main(int argc, char** argv) {
 	UMat flowUMat;
 
 	//vectors  and points declaration
-  vector<Point> pointInt;       //Int Points for polygon
 	vector<Point2f> oriVec;				//orientations vector
 	vector<Point2f> prevPts, nextPts;	//Point to analyze
 	vector<uchar> status;				//L-K status vector
@@ -233,36 +230,38 @@ int main(int argc, char** argv) {
 				setMouseCallback("ROI Selection", roiSelection);
         waitKey(0);
 
-        Point pol_point[1][static_cast<int>(roiPts.size())];
         for(unsigned int k = 0; k < roiPts.size(); k++)
         {
             pointsHistory.push_back(vector<Point2f>());
-            pol_point[0][k] = roiPts[k];
         }
-        const Point* ppt[1] = { pol_point[0] };
-        int npt[] = {static_cast<int>(roiPts.size())};
 
-        vector <Point> ROI_Poly;
-        approxPolyDP(roiFrame, ROI_Poly, 1.0, true);
-        Mat mask = cvCreateMat(480, 640, CV_8UC1);
-        fillConvexPoly(mask, &ROI_Poly[0], ROI_Poly.size(), 255, 8, 0);
-        
-        //Draw polygon with selected points
-        /*fillPoly(roiFrame, ppt, npt, 1, color[2], 8);
-
-
-        vector<Vec4i> hierarchy;
-        //Find contours of polygon
-        cout << "Fez fillPoly"<< endl;
-        cvtColor(roiFrame, roiFrame, CV_BGR2GRAY);
-        findContours(roiFrame,contours_poly, hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE, Point(0,0));
-        cout <<" Fez findContours"<< endl;
-        //Fit bounding rectangle
-        boundingRect(Mat(roiFrame));*/
+        /*
+        vector<vector<Point> > contours_poly( roiPts.size() );
+        //Draw Region of Interest with selected points
+        for(size_t i = 0; i<roiPts.size(); i++)
+        {
+          polylines(roiFrame, roiPts[i], contours_poly[i], 1, color[2], 1, LINE_8, 0);
+        }
 
         imshow("ROI Selection", roiFrame);
         waitKey(0);
+        */
 
+        Mat drawing = Mat::zeros(roiBox.size(), CV_8UC3);
+
+        vector<Rect> boundRect( roiPts.size() );
+        /*
+        //Cálculo do rectâgulo aproximado aos pontos selecionados
+        for (size_t i = 0; i < roiPts.size(); i++)
+        {
+          approxPolyDP( Mat(roiPts[i]), contours_poly[i], 3, true );
+          boundRect[i] = boundingRect( Mat(contours_poly[i]) );
+        }
+        for( size_t i = 0; i< roiPts.size(); i++ )
+           {
+             rectangle( drawing, boundRect[i].tl(), boundRect[i].br(), color[i], 2, 8, 0 );
+           }
+           */
 				//if points have been selected and ROI defined
 				if (roiPts.size() >= funcInt) {
 					//creates ROI and ROI mask
@@ -338,7 +337,6 @@ int main(int argc, char** argv) {
 			}
       else if(func == 1)
       {
-        drawCompass(frame);
         for(unsigned int k = 0; k < actualPts.size(); k++)
         {
             pointsHistory[k].push_back(actualPts[k]);
