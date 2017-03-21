@@ -232,41 +232,29 @@ int main(int argc, char** argv) {
 				imshow("ROI Selection", roiFrame);
 				setMouseCallback("ROI Selection", roiSelection);
         waitKey(0);
+        line(roiFrame, roiPts[roiPts.size()-1], roiPts[0], color[4], 1, 8);
+        imshow("ROI Selection", roiFrame);
+        waitKey(0);
 
-        Point pol_point[1][static_cast<int>(roiPts.size())];
+        //Point pol_point[1][static_cast<int>(roiPts.size())];
         for(unsigned int k = 0; k < roiPts.size(); k++)
         {
             pointsHistory.push_back(vector<Point2f>());
-            pol_point[0][k] = roiPts[k];
+            //pol_point[0][k] = roiPts[k];
         }
-        const Point* ppt[1] = { pol_point[0] };
-        int npt[] = {static_cast<int>(roiPts.size())};
+        /*const Point* ppt[1] = { pol_point[0] };
+        int npt[] = {static_cast<int>(roiPts.size())};*/
 
+        //fillPoly(roiFrame, ppt, npt, 1, color[2], 8);
         vector <Point> ROI_Poly;
-        approxPolyDP(roiFrame, ROI_Poly, 1.0, true);
-        Mat mask = cvCreateMat(480, 640, CV_8UC1);
-        fillConvexPoly(mask, &ROI_Poly[0], ROI_Poly.size(), 255, 8, 0);
-        
-        //Draw polygon with selected points
-        /*fillPoly(roiFrame, ppt, npt, 1, color[2], 8);
-
-
-        vector<Vec4i> hierarchy;
-        //Find contours of polygon
-        cout << "Fez fillPoly"<< endl;
-        cvtColor(roiFrame, roiFrame, CV_BGR2GRAY);
-        findContours(roiFrame,contours_poly, hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE, Point(0,0));
-        cout <<" Fez findContours"<< endl;
+        approxPolyDP(roiPts, ROI_Poly, 1.0, true);
         //Fit bounding rectangle
-        boundingRect(Mat(roiFrame));*/
-
-        imshow("ROI Selection", roiFrame);
-        waitKey(0);
+        roiBox = boundingRect(roiPts);
 
 				//if points have been selected and ROI defined
 				if (roiPts.size() >= funcInt) {
 					//creates ROI and ROI mask
-					roi = frame(roiBox);
+					roi = frame(roiBox);   //ROI Mask created
 					cvtColor(roi, nextFrame, CV_BGR2GRAY);
 
 					if (func == 1) {
@@ -302,8 +290,6 @@ int main(int argc, char** argv) {
       prevPts = nextPts;
       //stores last frame analysis
       auxFrame = frame.clone();
-      //cout << "prevPts: "<< prevPts << endl;
-      //waitKey(0);
 		}
 
 		prevFrame = nextFrame.clone();		//first frame is the same as last one
@@ -330,7 +316,6 @@ int main(int argc, char** argv) {
 
 		if (func == 0 || func == 1) {
 			nextFrame = nextFrame(roiBox);
-
 			//calculates optical flow using Lucas-Kanade
       if(func == 0)
       {
@@ -353,8 +338,19 @@ int main(int argc, char** argv) {
 				//calculates orientations vector
 				subtract(nextPts, prevPts, oriVec);
 
-				//draws ROI rectangle
-				rectangle(frame, roiPts[0], roiPts[1], color[4], 1);
+        //draws ROI polygon
+        for(int i=0; i<=static_cast<int>(roiPts.size()); i++) //ESTÁ A CRASHAR AQUI!
+        {
+          cout << "Entrou no for do polygon" << endl;
+          do
+          {
+            line(frame, roiPts[i], roiPts[i+1], color[4], 2, 8);
+          }while(i<= static_cast<int>(roiPts.size()-2));
+          if(i == static_cast<int>(roiPts.size()-1))
+          {
+            line(frame, roiPts[roiPts.size()-1], roiPts[0], color[4], 2, 8);
+          }
+        }
 
 				//draws compass
 				drawCompass(frame);
@@ -523,13 +519,16 @@ static void roiSelection(int event, int x, int y, int, void*) {
 			cnt++;
 			//point selection and ROI definition
 				if (funcInt == 2) {
-          cout << "\nEntrou em funcInt = 2\n";
 					//point selection
 					Point selected = Point(x, y);
 					roiPts.push_back(selected);
 
 					//displays selected point
 					circle(roiFrame, selected, 5, color[0], 1);
+          if(cnt>=2)
+          {
+            line(roiFrame, roiPts[cnt-2], roiPts[cnt-1], color[4], 2, 8);
+          }
           imshow("ROI Selection", roiFrame);
 				}
 				else if (funcInt == 3) {
