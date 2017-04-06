@@ -37,11 +37,13 @@ using namespace cv;
 
 //global variables
 Mat roiFrame, roiAux;
+Mat mask, roiMask;    //ROI of Polygon converted to Matrix form
 Rect roiBox;
 vector<Point2f> roiPts;		//points defining a ROI
 vector<Point2f> actualPts;
 vector<vector <Point2f> > pointsHistory; //Point history
 vector <vector <Point> > contours_poly;
+vector <Point> ROI_Poly;    //Region of interest polygon
 
 unsigned int cnt = 0;		//mouse clicks counter
 unsigned int funcInt;		//for program function
@@ -74,6 +76,11 @@ void drawCompass(Mat&);
 
 void getHist(Mat&, vector<Point2f>);
 
+void roi_polygon(vector<Point2f>, Mat);
+
+Rect rectLimits(vector<Point2f>);
+
+Point computeCentroid(const Mat);
 
 //main routine
 int main(int argc, char** argv) {
@@ -185,7 +192,7 @@ int main(int argc, char** argv) {
 		linesz = 2;
 
 		cout << endl
-			 << " Select one point of interest with the mouse. A second mouse click will reset the selection." << endl
+			 << " Select one or more points of interest with the mouse. A right mouse click will reset the selection." << endl
 			 << " Press ENTER when the selection is made." << endl;
 	}
 	else if (func == 2) {
@@ -223,7 +230,8 @@ int main(int argc, char** argv) {
 			//converts frame to grayscale
 			cvtColor(frame, nextFrame, CV_BGR2GRAY);
 
-			if (func == 0 || func == 1) {
+			if (func == 0 || func == 1)
+      {
 				//images for selection
 				roiFrame = frame.clone();
 				roiAux = roiFrame.clone();
@@ -232,33 +240,70 @@ int main(int argc, char** argv) {
 				imshow("ROI Selection", roiFrame);
 				setMouseCallback("ROI Selection", roiSelection);
         waitKey(0);
-        line(roiFrame, roiPts[roiPts.size()-1], roiPts[0], color[4], 1, 8);
-        imshow("ROI Selection", roiFrame);
-        waitKey(0);
 
-        //Point pol_point[1][static_cast<int>(roiPts.size())];
-        for(unsigned int k = 0; k < roiPts.size(); k++)
+        if(func == 0)
         {
-            pointsHistory.push_back(vector<Point2f>());
-            //pol_point[0][k] = roiPts[k];
+          line(roiFrame, roiPts[roiPts.size()-1], roiPts[0], color[4], 1, 8);
+
+          imshow("ROI Selection", roiFrame);
+          waitKey(0);
+
+          //Create Polygon from vertices (roiPts)
+          approxPolyDP(roiPts, ROI_Poly, 1.0, true);
+
+          Mat mask = Mat::zeros(roiFrame.rows, roiFrame.cols, CV_8UC1);
+          cout << "Não fez convex" << endl << endl;
+
+          // Fill polygon white
+          fillConvexPoly(mask, &ROI_Poly[0], ROI_Poly.size(), color[8]);
+          cout << "Fez convex" << endl << endl;
+
+          //Fit bounding rectangle
+          roiBox = rectLimits(roiPts);
+          cout << "roiBox" << endl << roiBox << endl;
+
+          roiMask = mask(roiBox);
+
+          if(mask.empty() == true)
+          {
+            cout << "Imagem vazia" << endl;
+            return(1);
+          }
+          else
+          {
+            namedWindow("roiMask", WINDOW_AUTOSIZE);
+            imshow("roiMask", roiMask);
+
+            waitKey(0);
+          }
+
+          /*
+          imshow("mask", mask);
+          waitKey(0);
+          */
+  				//if points have been selected and ROI defined
         }
-        /*const Point* ppt[1] = { pol_point[0] };
-        int npt[] = {static_cast<int>(roiPts.size())};*/
 
-        //fillPoly(roiFrame, ppt, npt, 1, color[2], 8);
-        vector <Point> ROI_Poly;
-        approxPolyDP(roiPts, ROI_Poly, 1.0, true);
-        //Fit bounding rectangle
-        roiBox = boundingRect(roiPts);
+        if(func == 1)
+        {
+          for(unsigned int k = 0; k < roiPts.size(); k++)
+          {
+              pointsHistory.push_back(vector<Point2f>());
+          }
+        }
 
-				//if points have been selected and ROI defined
-				if (roiPts.size() >= funcInt) {
+				if (roiPts.size() >= 1)
+        {
 					//creates ROI and ROI mask
 					roi = frame(roiBox);   //ROI Mask created
-					cvtColor(roi, nextFrame, CV_BGR2GRAY);
 
+          Mat temp = Mat(roi.rows, roi.cols, roi.type());
+          roi.copyTo(temp, roiMask);
+          imshow("roi", temp);
+
+          waitKey(0);
 					if (func == 1) {
-            cout << "roiPts size: "<< roiPts.size()<<endl;
+            //cout << "roiPts size: "<< roiPts.size()<<endl;
             for(size_t i=2; i<=roiPts.size()-1; i=i+3)
             {
               //prepares vectors for point tracking
@@ -280,9 +325,52 @@ int main(int argc, char** argv) {
 
 		if (func == 0) {
 			//gets image features
+      //cout << "Antes de goodFeaturesToTrack" << endl << endl;
 			goodFeaturesToTrack(nextFrame, nextPts, nPts, qLevel, minDist);
+      //cout << "Depois de goodFeaturesToTrack" << endl << endl;
       //initializes prevPts.vector
       prevPts = nextPts;
+      //cout << "prevPts" << endl << prevPts << endl;
+
+      //Calculate contours of polygon
+      vector<vector<Point> > contours;
+      vector<Vec4i> hierarchy;
+
+      //Convert mask to binary mask
+      Mat roiFrame_gray;
+      //mask.convertTo(mask, CV_BGR2GRAY);
+      /*
+      cout << "Não fez o contorno" << endl << endl;
+      findContours(mask, contours, hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE);
+      cout << "Fez o contorno" << endl << endl;
+      */
+
+      //Create empty matrix with size of roi
+      Mat roiPtsMat = Mat::zeros(nextFrame.size(), nextFrame.type());
+
+      //Auxiliar coordinate points
+      int ptx, pty;
+
+      //Check if Point is inside Polygon or not
+      for(size_t i = 0; i < contours.size(); i++)
+      {
+        //cout << "Entrou no for" << endl << endl;
+        ptx = roiPts[i].x;
+        pty = roiPts[i].y;
+        //If it's inside of the polygon, then increments that Mat coordinate point by one
+        if(pointPolygonTest(contours[i], roiPts[i], false) > 0)
+        {
+          cout << "DENTRO" << endl << endl;
+          //cout << "roiPtsMat" << endl << roiPtsMat.at<float>(ptx, pty) << endl;
+          roiPtsMat.at<unsigned char>(ptx, pty) = 1;    //Dá erro
+          //cout << "Dentro e depois do at" << endl << endl;
+        }
+        else
+        {
+          cout << "FORA" << endl << roiPts[i] << endl;
+          continue;
+        }
+      }
 		}
 
 		if (func == 1) {
@@ -320,6 +408,10 @@ int main(int argc, char** argv) {
       if(func == 0)
       {
         calcOpticalFlowPyrLK(prevFrame, nextFrame, prevPts, nextPts, status, err);
+        /*cout << "nexFrame" << nextFrame << endl << endl;
+        waitKey(0);
+        cout << "nextPts" << nextPts << endl << endl;
+        waitKey(0);*/
 			}
       else if(func == 1)
       {
@@ -335,28 +427,29 @@ int main(int argc, char** argv) {
       }
 
 			if (func == 0) {
+        //vector <Point2f> mask;
+        //draws compass
+        drawCompass(frame);
+
 				//calculates orientations vector
 				subtract(nextPts, prevPts, oriVec);
 
-        //draws ROI polygon
-        for(int i=0; i<=static_cast<int>(roiPts.size()); i++) //ESTÁ A CRASHAR AQUI!
-        {
-          cout << "Entrou no for do polygon" << endl;
-          do
-          {
-            line(frame, roiPts[i], roiPts[i+1], color[4], 2, 8);
-          }while(i<= static_cast<int>(roiPts.size()-2));
-          if(i == static_cast<int>(roiPts.size()-1))
-          {
-            line(frame, roiPts[roiPts.size()-1], roiPts[0], color[4], 2, 8);
-          }
-        }
+        //Draws ROI Polygon
+        roi_polygon(roiPts, frame);
 
-				//draws compass
-				drawCompass(frame);
+        //cout << "ROI_Poly" << ROI_Poly << endl << endl;
+        //cout << "mask" << endl << "" << mask << endl << endl;
+
+        /*
+            Preciso de mascarar o roiPts com a região de interesse aqui!
+        */
+
+
+        //imshow("Mask", mask);
+        //waitKey(0);
 
 				//draws motion lines on display
-				for (unsigned int i = 0; i < nextPts.size(); i++) {
+				for (unsigned int i = 0; i < prevPts.size(); i++) {
 					if (status[i]) {
 						//defines lines' points
             x1 = roiPts[0].x + prevPts[i].x;	//initial pts
@@ -366,26 +459,23 @@ int main(int argc, char** argv) {
 
 						//vector color attribution
 						cidx = VecOrientation(oriVec[i]);
-
+            //cout << "roiPts" << roiPts[i] << endl << endl;
 						line(frame, Point(x1, y1), Point(x2, y2), color[cidx], linesz);
 					}
 				}
 			}
 			else
       {
-        /*for(unsigned int i = 0; i < roiPts.size(); i++)
-        {
-          line(frame, roiPts[i], actualPts[i], color[4], linesz);
-        }*/
         for(unsigned int i = 0; i < pointsHistory.size(); i++)
         {
           vector < Point2f > points = pointsHistory[i];
-
           for(unsigned int k = 1; k < points.size(); k++)
           {
-            line(frame, points[k-1], points[k], (k == points.size() - 1) ? color[11] : color[VecOrientation(points[k])], linesz);
+            //Draws line, if it's the actual point then draws yellow line
+            line(frame, points[k-1], points[k], (k == points.size() - 1) ? color[11] : color[VecOrientation(points[k-1])], linesz);
+            //cout << "" << endl << points[k] << endl;
+            //waitKey(0);
           }
-
         }
 			}
 		}
@@ -592,6 +682,7 @@ int VecOrientation(Point2f pt1) {
 }
 
 
+
 void drawCompass(Mat& frame) {
 	// This function draws a compass at the top left corner of the image
 	arrowedLine(frame, Point(20*RES_SCALE, 20*RES_SCALE), Point(20*RES_SCALE+12*RES_SCALE, 20*RES_SCALE), color[0], 2);
@@ -658,6 +749,45 @@ void getHist(Mat& histImg, vector<Point2f> vec) {
 		else {
 			putText(histImg, str, Point((i+1)*binW, 20), FONT_HERSHEY_PLAIN, 1, color[9]);
 		}
-
 	}
+}
+
+void roi_polygon(vector<Point2f> roiPts, Mat frame)
+{
+  //draws ROI polygon
+  int i=0;
+  do{
+    line(frame, roiPts[i], roiPts[i+1], color[4], 1, 8);
+    i++;
+  }while(i<static_cast<int>(roiPts.size())-1);
+  if(i==static_cast<int>(roiPts.size())-1)
+  {
+    line(frame, roiPts[static_cast<int>(roiPts.size())-1], roiPts[0], color[4], 1, 8);
+  }
+}
+
+Rect rectLimits(vector<Point2f> roiPts)
+{
+  Rect rectangle;
+  float smallx = roiPts[0].x;
+  float smally = roiPts[0].y;
+  float bigx = roiPts[0].x;
+  float bigy = roiPts[0].y;
+
+  for(size_t i = 1; i <= roiPts.size()-1; i++)
+  {
+    if(roiPts[i].x < smallx)  smallx = roiPts[i].x;
+    if(roiPts[i].y < smally)  smally = roiPts[i].y;
+    if(roiPts[i].x > bigx)    bigx = roiPts[i].x;
+    if(roiPts[i].y > bigy)    bigy = roiPts[i].y;
+  }
+  rectangle = Rect(Point(smallx, bigy), Point(bigx, smally));
+  return rectangle;
+}
+
+Point computeCentroid(const Mat &mask)
+{
+  Moments m = moments(mask, true);
+  Point center(m.m10/m.m00, m.m01/m.m00);
+  return center;
 }

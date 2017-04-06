@@ -1,5 +1,5 @@
 /*===========================================*/
-/*											 */	
+/*											 */
 /*		MUSCLE MOVEMENT QUANTIFICATION 		 */
 /*			COMPUTER VISION PROJECT 		 */
 /*											 */
@@ -256,26 +256,26 @@ int main(int argc, char** argv) {
 
 		//stores last frame analysis
 		if (func == 1) {
-			auxFrame = frame.clone(); 
+			auxFrame = frame.clone();
 		}
 
 		prevFrame = nextFrame.clone();		//first frame is the same as last one
 		cap >> frame;						//gets a new frame from camera
-			
+
 		//ends tracking if video ends
 		if(!frame.data) {
 			if (func == 1) {
 				imshow("Movement Tracking", auxFrame);
 				waitKey(0);
 			}
-			
+
 			cout << endl << " Video has ended. Tracking Stopped." << endl << endl;
 			break;
 		}
 
 		//resizesconverts to grayscale
 		resize(frame, frame, Size(), RES_SCALE, RES_SCALE, INTER_CUBIC);
-		
+
 		//stores original resized frame
 		if (func == 0 || func == 2) auxFrame = frame.clone();
 
@@ -309,7 +309,7 @@ int main(int argc, char** argv) {
 
 						//vector color attribution
 						cidx = VecOrientation(oriVec[i]);
-		
+
 						line(frame, Point(x1, y1), Point(x2, y2), color[cidx], linesz);
 					}
 				}
@@ -320,7 +320,7 @@ int main(int argc, char** argv) {
 
 				//draws the path of selected point
 				for (unsigned int i = 0; i < oriVec.size() - 1; i++) {
-					if (status[0]) {	
+					if (status[0]) {
 						if (i == oriVec.size() - 2) {
 							//draws at current point position
 							line(frame, oriVec[i], oriVec[i+1], color[0], linesz);
@@ -344,7 +344,7 @@ int main(int argc, char** argv) {
 
 			//draws compass
 			drawCompass(frame);
-			
+
 			//creates flow analysis grid
 			for (int i = 0; i < frame.rows; i += FBstep) {
 				for (int j = 0; j < frame.cols; j += FBstep) {
@@ -396,13 +396,13 @@ int main(int argc, char** argv) {
 		    			Scalar oriAux = sum(oriVec);
 		    			oriAux[0] = oriAux[0]/oriVec.size();
 		    			oriAux[1] = oriAux[1]/oriVec.size();
-		    			
+
 		    			cidx = VecOrientation(Point(oriAux[0], oriAux[1]));
-		    			
+
 		    			//displays vector
 		    			arrowedLine(auxFrame, Point(auxFrame.cols/2, auxFrame.rows/2),
 		    				Point(frame.cols/2+oriAux[0]*10, frame.rows/2+oriAux[1]*10), color[cidx], 2);
-	    				
+
 	    				//displays vector value
 	    				putText(auxFrame, "(x, y) =", Point(10, 25), FONT_HERSHEY_PLAIN, 1, color[8]);
 	    				sprintf(auxch, "(%.2f,", oriAux[0]);
@@ -472,7 +472,7 @@ static void roiSelection(int event, int x, int y, int, void*) {
 
 					//displays selected point
 					circle(roiFrame, selected, 5, color[0], 1);
-					
+
 					if (cnt == 2) {
 						//ROI display and storage
 						rectangle(roiFrame, roiPts[0], roiPts[1], color[4], 2);
@@ -571,7 +571,7 @@ void getHist(Mat& histImg, vector<Point2f> vec) {
 	for (unsigned int i = 0; i < vec.size(); i++) {
 		freq[VecOrientation(vec[i])]++;
 	}
-	
+
 	//displays initial histogram elements
 	int len = 43;
 	line(histImg, Point(len, 0), Point(len, 400), color[8], 1);
@@ -597,7 +597,7 @@ void getHist(Mat& histImg, vector<Point2f> vec) {
 
 		//draws bin
 		rectangle(histImg, Point(len+1+i*binW, histH), Point(len+(i+1)*binW, histH-binsz), color[i], CV_FILLED);
-		
+
 		//displays bin value
 		stringstream ss;
 		ss << freq[i];
@@ -609,6 +609,6 @@ void getHist(Mat& histImg, vector<Point2f> vec) {
 		else {
 			putText(histImg, str, Point((i+1)*binW, 20), FONT_HERSHEY_PLAIN, 1, color[9]);
 		}
-		
+
 	}
 }

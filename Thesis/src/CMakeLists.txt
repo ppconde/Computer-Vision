@@ -21,3 +21,7 @@ target_link_libraries(Poly ${OpenCV_LIBS} ${PCL_LIBRARIES})
 #add_executable(Hull Hull.cpp)
 #target_link_libraries(Hull ${OpenCV_LIBS} ${PCL_LIBRARIES})
 #
+
+add_executable(1 1.cpp)
+target_link_libraries(1 ${OpenCV_LIBS} ${PCL_LIBRARIES})
+#
