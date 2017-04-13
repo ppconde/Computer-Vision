@@ -46,7 +46,7 @@ vector <vector <Point> > contours_poly;
 vector <Point> ROI_Poly;    //Region of interest polygon
 
 unsigned int cnt = 0;		//mouse clicks counter
-unsigned int funcInt;		//for program function
+unsigned int func;		//for program function
 
 //color structure for segmentation
 Scalar color[] =
@@ -85,7 +85,6 @@ Point computeCentroid(const Mat);
 //main routine
 int main(int argc, char** argv) {
 	int sel;							//video selection
-	int func;							//program function type
 	bool traj = TRAJ_INIT;				//trajectory visualization
 	bool hist = HIST_INIT;				//histogram visualization
 	char file[20];
@@ -103,24 +102,13 @@ int main(int argc, char** argv) {
 	vector<Point2f> prevPts, nextPts;	//Point to analyze
 	vector<uchar> status;				//L-K status vector
 	vector<float> err;					//L-K error vector
-	Point2f flowPt;						//Farneback flow point
 
 	//L-K optical flow configuration
 	int nPts = 5000;					//number of features
 	double qLevel = 0.01;				//quality level
 	double minDist = 0.01;				//min euclidian distance
 
-	//Farneback optical flow configuration
-	int flowDen;						//farneback flow density
-	float pyrSc = 0.5;					//pyramid scale
-	int levels = 2;						//pyramid levels
-	int winsz = 15;						//averaging window size
-	int iters = 2;						//number of iterations
-	int polyN = 5;						//pix neighborhood size for polynomial expansion
-	float polyS = 1.2;					//gaussian std dev for polynomial expansion
-	int FBstep;							//grid spacing
-
-	float x1, y1, x2, y2;				//point coords for drawing
+  float x1, y1, x2, y2;				//point coords for drawing
 
 	//presents user interface
 	system("clear");		//clears terminal window
@@ -172,13 +160,11 @@ int main(int argc, char** argv) {
 	}
 
 	//analysis method selection
-	cout << endl << " Choose analysis method [0 = ROI (L-K), 1 = point (L-K), 2 = grid (FB)]: ";
+	cout << endl << " Choose analysis method [0 = ROI (L-K), 1 = point (L-K), 2 = ROI Point Tracking (L-K)]: ";
 	cin >> func;
 
 	//properties for each program function
 	if (func == 0) {
-		//L-K optical flow
-		funcInt = 2;
 		linesz = 1;
 
 		cout << endl
@@ -186,34 +172,17 @@ int main(int argc, char** argv) {
     			 << " Press ENTER when the selection is made." << endl;
 
 	}
-	else if (func == 1) {
-		//point tracking
-		funcInt = 3;
-		linesz = 2;
+	else if (func == 1 || func == 2) {
+		linesz = 1;
 
 		cout << endl
 			 << " Select one or more points of interest with the mouse. A right mouse click will reset the selection." << endl
 			 << " Press ENTER when the selection is made." << endl;
-	}
-	else if (func == 2) {
-		//Farneback optical flow
-		linesz = 1;
-
-		cout << endl
-			 << " Choose flow density [0 = sparse, 1 = dense]: ";
-		cin >> flowDen;
-
-		if (flowDen == 1) FBstep = 2;	//uses dense flow
-		else if (flowDen == 0) FBstep = STEP;
+  }
 		else {
 			cout << "Error: invalid method choosen. Aborting." << endl << endl;
 			return -1;
 		}
-	}
-	else {
-		cout << "Error: invalid method choosen. Aborting." << endl << endl;
-		return -1;
-	}
 
 	for (;;) {
 		//initial behavior
@@ -230,7 +199,7 @@ int main(int argc, char** argv) {
 			//converts frame to grayscale
 			cvtColor(frame, nextFrame, CV_BGR2GRAY);
 
-			if (func == 0 || func == 1)
+			if (func == 0 || func == 1 || func == 2)
       {
 				//images for selection
 				roiFrame = frame.clone();
@@ -252,11 +221,9 @@ int main(int argc, char** argv) {
           approxPolyDP(roiPts, ROI_Poly, 1.0, true);
 
           Mat mask = Mat::zeros(roiFrame.rows, roiFrame.cols, CV_8UC1);
-          cout << "Não fez convex" << endl << endl;
 
           // Fill polygon white
           fillConvexPoly(mask, &ROI_Poly[0], ROI_Poly.size(), color[8]);
-          cout << "Fez convex" << endl << endl;
 
           //Fit bounding rectangle
           roiBox = rectLimits(roiPts);
@@ -266,57 +233,35 @@ int main(int argc, char** argv) {
 
           if(mask.empty() == true)
           {
-            cout << "Imagem vazia" << endl;
+            cout << "ERROR: Empty picture!" << endl;
             return(1);
           }
-          else
-          {
-            namedWindow("roiMask", WINDOW_AUTOSIZE);
-            imshow("roiMask", roiMask);
-
-            waitKey(0);
-          }
-
-          /*
-          imshow("mask", mask);
-          waitKey(0);
-          */
   				//if points have been selected and ROI defined
+
+          //initializes prevPts vector
+          prevPts = nextPts;
         }
 
-        if(func == 1)
-        {
-          for(unsigned int k = 0; k < roiPts.size(); k++)
-          {
-              pointsHistory.push_back(vector<Point2f>());
+        if(func == 1){
+          for(unsigned int k = 0; k < roiPts.size(); k++){
+            pointsHistory.push_back(vector<Point2f>());
           }
+          cout << "Chegou ao pointsHistory" << endl << endl;
         }
-
-				if (roiPts.size() >= 1)
-        {
-					//creates ROI and ROI mask
-					roi = frame(roiBox);   //ROI Mask created
-
-          Mat temp = Mat(roi.rows, roi.cols, roi.type());
-          roi.copyTo(temp, roiMask);
-          imshow("roi", temp);
-
-          waitKey(0);
-					if (func == 1) {
-            //cout << "roiPts size: "<< roiPts.size()<<endl;
-            for(size_t i=2; i<=roiPts.size()-1; i=i+3)
-            {
+				if (roiPts.size() >= 1){
+					if (func == 0 || func == 1 || func == 2) {
+            for(size_t i=2; i<=roiPts.size()-1; i=i+3){
               //prepares vectors for point tracking
               nextPts.push_back(roiPts[i]);
               oriVec.push_back(roiPts[i]);
             }
 					}
+          cout << "Fez o push_back dos roiPts" << endl << endl;
 				}
 				else {
 					cout << "Error: not enough points selected to form ROI." << endl << endl;
 					return -1;
 				}
-
 				//closes ROI selection window
 				destroyWindow("ROI Selection");
 			}
@@ -324,60 +269,25 @@ int main(int argc, char** argv) {
 		}
 
 		if (func == 0) {
-			//gets image features
-      //cout << "Antes de goodFeaturesToTrack" << endl << endl;
-			goodFeaturesToTrack(nextFrame, nextPts, nPts, qLevel, minDist);
-      //cout << "Depois de goodFeaturesToTrack" << endl << endl;
-      //initializes prevPts.vector
-      prevPts = nextPts;
-      //cout << "prevPts" << endl << prevPts << endl;
 
-      //Calculate contours of polygon
-      vector<vector<Point> > contours;
-      vector<Vec4i> hierarchy;
-
-      //Convert mask to binary mask
-      Mat roiFrame_gray;
-      //mask.convertTo(mask, CV_BGR2GRAY);
-      /*
-      cout << "Não fez o contorno" << endl << endl;
-      findContours(mask, contours, hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE);
-      cout << "Fez o contorno" << endl << endl;
-      */
-
-      //Create empty matrix with size of roi
-      Mat roiPtsMat = Mat::zeros(nextFrame.size(), nextFrame.type());
-
-      //Auxiliar coordinate points
-      int ptx, pty;
-
-      //Check if Point is inside Polygon or not
-      for(size_t i = 0; i < contours.size(); i++)
-      {
-        //cout << "Entrou no for" << endl << endl;
-        ptx = roiPts[i].x;
-        pty = roiPts[i].y;
-        //If it's inside of the polygon, then increments that Mat coordinate point by one
-        if(pointPolygonTest(contours[i], roiPts[i], false) > 0)
-        {
-          cout << "DENTRO" << endl << endl;
-          //cout << "roiPtsMat" << endl << roiPtsMat.at<float>(ptx, pty) << endl;
-          roiPtsMat.at<unsigned char>(ptx, pty) = 1;    //Dá erro
-          //cout << "Dentro e depois do at" << endl << endl;
-        }
-        else
-        {
-          cout << "FORA" << endl << roiPts[i] << endl;
-          continue;
-        }
-      }
+      //creates ROI and roiMask
+      roi = frame(roiBox);   //ROI Mask created
+      Mat temp = Mat(roi.rows, roi.cols, roi.type());
+      roi.copyTo(temp, roiMask);
+      cvtColor(temp, nextFrame, CV_BGR2GRAY);
+      namedWindow("nextFrame", WINDOW_AUTOSIZE);
+      imshow("nextFrame", nextFrame);
+      //gets image features
+			//goodFeaturesToTrack(nextFrame, nextPts, nPts, qLevel, minDist);
+      goodFeaturesToTrack(nextFrame, nextPts, nPts, qLevel, minDist, roiMask);
 		}
 
-		if (func == 1) {
+		if (func == 1 || func == 2) {
       //initializes prevPts vector
       prevPts = nextPts;
       //stores last frame analysis
       auxFrame = frame.clone();
+      //cout << "Fez a inicialização dos prevPts e auxFrame" << endl << endl;
 		}
 
 		prevFrame = nextFrame.clone();		//first frame is the same as last one
@@ -385,49 +295,30 @@ int main(int argc, char** argv) {
 
 		//ends tracking if video ends
 		if(!frame.data) {
-			if (func == 1) {
+			if (func == 1 || func == 2) {
 				imshow("Movement Tracking", auxFrame);
 				waitKey(0);
 			}
 			cout << endl << " Video has ended. Tracking Stopped." << endl << endl;
 			break;
 		}
-
+    //cout << "Antes do resize" << endl << endl;
 		//resizesconverts to grayscale
 		resize(frame, frame, Size(), RES_SCALE, RES_SCALE, INTER_CUBIC);
 
-		//stores original resized frame
-		if (func == 0 || func == 2) auxFrame = frame.clone();
+    cvtColor(frame, nextFrame, CV_BGR2GRAY);
 
-		//converts to grayscale
-		cvtColor(frame, nextFrame, CV_BGR2GRAY);
+    if(func == 0)		nextFrame = nextFrame(roiBox);
 
-		if (func == 0 || func == 1) {
-			nextFrame = nextFrame(roiBox);
+		if (func == 0 || func == 1 || func == 2)
+    {
 			//calculates optical flow using Lucas-Kanade
       if(func == 0)
       {
+        //Stores original resized frame
+        auxFrame = frame.clone();
         calcOpticalFlowPyrLK(prevFrame, nextFrame, prevPts, nextPts, status, err);
-        /*cout << "nexFrame" << nextFrame << endl << endl;
-        waitKey(0);
-        cout << "nextPts" << nextPts << endl << endl;
-        waitKey(0);*/
-			}
-      else if(func == 1)
-      {
-        drawCompass(frame);
-        for(unsigned int k = 0; k < actualPts.size(); k++)
-        {
-            pointsHistory[k].push_back(actualPts[k]);
-        }
 
-        vector<Point2f> out;
-        calcOpticalFlowPyrLK(prevFrame, nextFrame, actualPts, out, status, err);
-        actualPts = out;
-      }
-
-			if (func == 0) {
-        //vector <Point2f> mask;
         //draws compass
         drawCompass(frame);
 
@@ -437,23 +328,12 @@ int main(int argc, char** argv) {
         //Draws ROI Polygon
         roi_polygon(roiPts, frame);
 
-        //cout << "ROI_Poly" << ROI_Poly << endl << endl;
-        //cout << "mask" << endl << "" << mask << endl << endl;
-
-        /*
-            Preciso de mascarar o roiPts com a região de interesse aqui!
-        */
-
-
-        //imshow("Mask", mask);
-        //waitKey(0);
-
 				//draws motion lines on display
 				for (unsigned int i = 0; i < prevPts.size(); i++) {
 					if (status[i]) {
 						//defines lines' points
-            x1 = roiPts[0].x + prevPts[i].x;	//initial pts
-						y1 = roiPts[0].y + prevPts[i].y;
+            x1 = roiBox.x + prevPts[i].x;	//initial pts
+						y1 = roiBox.y + prevPts[i].y;
 						x2 = x1 + oriVec[i].x*LK_SCALE;		//final pts = initial pts +
 						y2 = y1 + oriVec[i].y*LK_SCALE;		// + orientation vcs (w/ scale)
 
@@ -464,50 +344,42 @@ int main(int argc, char** argv) {
 					}
 				}
 			}
-			else
+      //Multiple point tracking
+      if(func == 1)
       {
+        drawCompass(frame);
+        for(unsigned int k = 0; k < actualPts.size(); k++)
+        {
+            pointsHistory[k].push_back(actualPts[k]);
+        }
+
+        vector<Point2f> out;
+
+        calcOpticalFlowPyrLK(prevFrame, nextFrame, actualPts, out, status, err);
+        actualPts = out;
+
         for(unsigned int i = 0; i < pointsHistory.size(); i++)
         {
+          //cout << "Entrou no for" << endl;
           vector < Point2f > points = pointsHistory[i];
           for(unsigned int k = 1; k < points.size(); k++)
           {
             //Draws line, if it's the actual point then draws yellow line
-            line(frame, points[k-1], points[k], (k == points.size() - 1) ? color[11] : color[VecOrientation(points[k-1])], linesz);
+            line(frame, points[k-1], points[k], (k == points.size() - 1) ? color[11] : color[VecOrientation(points[k-1])], 2);
+            //cout << "Desenhou a linha";
             //cout << "" << endl << points[k] << endl;
             //waitKey(0);
           }
         }
-			}
-		}
-		else {
-			//calculates optical flow using Farneback
-			calcOpticalFlowFarneback(prevFrame, nextFrame, flowUMat, pyrSc, levels, winsz, iters, polyN, polyS, 0);
+      }
+      //ROI tracking
+      else if(func == 2)
+      {
+        calcOpticalFlowPyrLK(prevFrame, nextFrame, prevPts, nextPts, status, err);
+        //Draw polygon using points
+        roi_polygon(nextPts, frame);
 
-			flowUMat.copyTo(flow);
-
-			//flushes orientations vector for new frame
-			oriVec.clear();
-
-			//draws compass
-			drawCompass(frame);
-
-			//creates flow analysis grid
-			for (int i = 0; i < frame.rows; i += FBstep) {
-				for (int j = 0; j < frame.cols; j += FBstep) {
-					flowPt = flow.at<Point2f>(i, j)*FB_SCALE;
-
-					if ((flowPt.x > FLOW_SZ || flowPt.x < -FLOW_SZ) && (flowPt.y > FLOW_SZ || flowPt.y < -FLOW_SZ)) {
-						//stores flow in orientations vector
-						oriVec.push_back(flowPt);
-
-						//vector color attribution
-						cidx = VecOrientation(flowPt);
-
-						line(frame, Point(j, i), Point(j + flowPt.x, i + flowPt.y), color[cidx], linesz);
-					}
-					else continue;
-				}
-			}
+      }
 		}
 
 		//calculates orientation's histogram and displays it
@@ -608,7 +480,8 @@ static void roiSelection(int event, int x, int y, int, void*) {
 		case CV_EVENT_LBUTTONDOWN:
 			cnt++;
 			//point selection and ROI definition
-				if (funcInt == 2) {
+				if (func == 0) {
+          cout << "Entrou no roiSelection func == 0" << endl << endl;
 					//point selection
 					Point selected = Point(x, y);
 					roiPts.push_back(selected);
@@ -619,11 +492,10 @@ static void roiSelection(int event, int x, int y, int, void*) {
           {
             line(roiFrame, roiPts[cnt-2], roiPts[cnt-1], color[4], 2, 8);
           }
-          imshow("ROI Selection", roiFrame);
 				}
-				else if (funcInt == 3) {
+        if (func == 1) {
 					cnt++;
-
+          cout << "Entrou no roiSelection func == 1" << endl << endl;
 					//point selection
 					Point selected = Point(x, y);
 					roiPts.push_back(selected);
@@ -634,8 +506,22 @@ static void roiSelection(int event, int x, int y, int, void*) {
 					circle(roiFrame, selected, 5, color[0], 1);
 
 					//stores ROI
-					roiBox = Rect(Point(1, 1), Point(roiFrame.size()));
+					roiBox = rectLimits(actualPts);
 				}
+        else if(func == 2)
+        {
+          cout << "Entrou no roiSelection func == 2" << endl;
+          Point selected = Point(x,y);
+          roiPts.push_back(selected);
+          actualPts.push_back(selected);
+
+          //displays selected point
+          circle(roiFrame, selected, 5, color[0], 1);
+          if(cnt>=2)
+          {
+            line(roiFrame, roiPts[cnt-2], roiPts[cnt-1], color[4], 2, 8);
+          }
+        }
         imshow("ROI Selection", roiFrame);
       break;
 
