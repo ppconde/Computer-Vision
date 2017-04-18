@@ -199,8 +199,7 @@ int main(int argc, char** argv) {
 			//converts frame to grayscale
 			cvtColor(frame, nextFrame, CV_BGR2GRAY);
 
-			if (func == 0 || func == 1 || func == 2)
-      {
+			if (func == 0 || func == 1 || func == 2){
 				//images for selection
 				roiFrame = frame.clone();
 				roiAux = roiFrame.clone();
@@ -210,8 +209,7 @@ int main(int argc, char** argv) {
 				setMouseCallback("ROI Selection", roiSelection);
         waitKey(0);
 
-        if(func == 0)
-        {
+        if(func == 0){
           line(roiFrame, roiPts[roiPts.size()-1], roiPts[0], color[4], 1, 8);
 
           imshow("ROI Selection", roiFrame);
@@ -225,25 +223,19 @@ int main(int argc, char** argv) {
           // Fill polygon white
           fillConvexPoly(mask, &ROI_Poly[0], ROI_Poly.size(), color[8]);
 
-          cout << "mask" << endl;
-          roiMask = mask(roiBox);
-          cout << "after mask" << endl;
-
-          //Fit bounding rectangle
-          roiBox = rectLimits(roiPts);
-          cout << "roiBox" << endl << roiBox << endl;
-
-          //initializes prevPts vector
+          //Initializes prevPts vector
           prevPts = nextPts;
-          cout << "Fim da selecção do ROI" << endl;
+
+          //Creates black and white mask
+          roiMask = mask(roiBox);
         }
 
-        if(func == 1 || func  == 2){
+        else if(func == 1 || func  == 2){
           for(unsigned int k = 0; k < roiPts.size(); k++){
             pointsHistory.push_back(vector<Point2f>());
           }
         }
-				if (roiPts.size() >= 1){
+				else if (roiPts.size() >= 1){
 					if (func == 0 || func == 1 || func == 2) {
             for(size_t i=2; i<=roiPts.size()-1; i=i+3){
               //prepares vectors for point tracking
@@ -252,10 +244,8 @@ int main(int argc, char** argv) {
             }
 					}
 				}
-        if (func == 2)
-        {
+        else if (func == 2){
           line(roiFrame, roiPts[roiPts.size()-1], roiPts[0], color[4], 1, 8);
-
           imshow("ROI Selection", roiFrame);
           waitKey(0);
         }
@@ -268,41 +258,6 @@ int main(int argc, char** argv) {
 			}
 			else cnt = 1;	//overrides counter
 		}
-
-		if (func == 0) {
-
-      //creates ROI and roiMask
-      roi = frame(roiBox);   //ROI Mask created
-      cout << "frame(roiBox)" << endl;
-
-      Mat temp = Mat(roi.rows, roi.cols, roi.type());
-      cout << "Depois do temp" << endl;
-
-      roi.copyTo(temp, roiMask);
-      cout << "Depois do copy" << endl;
-
-      cvtColor(temp, nextFrame, CV_BGR2GRAY);
-      cout << "Depois do cvtColor" << endl;
-
-      /*namedWindow("roiMask", WINDOW_AUTOSIZE);
-      imshow("roiMask", roiMask);*/
-      namedWindow("roi", WINDOW_AUTOSIZE);
-      imshow("roi", roi);
-      namedWindow("temp", WINDOW_AUTOSIZE);
-      imshow("temp", temp);
-      waitKey(0);
-
-      namedWindow("nextFrame", WINDOW_AUTOSIZE);
-      imshow("nextFrame", nextFrame);
-      //namedWindow("roiMask", WINDOW_AUTOSIZE);
-      //imshow("roiMask", roiMask);
-      //waitKey(0);
-
-      //gets image features
-			goodFeaturesToTrack(nextFrame, nextPts, nPts, qLevel, minDist);
-      cout << "Fim da máscara" << endl;
-		}
-
     //initializes prevPts vector
     prevPts = nextPts;
     //stores last frame analysis
@@ -321,7 +276,6 @@ int main(int argc, char** argv) {
 			cout << endl << " Video has ended. Tracking Stopped." << endl << endl;
 			break;
 		}
-    //cout << "Antes do resize" << endl << endl;
 		//resizesconverts to grayscale
     if (func == 1 || func == 2)
     {
@@ -335,15 +289,26 @@ int main(int argc, char** argv) {
 			//calculates optical flow using Lucas-Kanade
       if(func == 0)
       {
+        //Region of interest rectangle
+        roiBox = rectLimits(roiPts);
+
+        //Mat or image of the roiBox
+        roi = frame(roiBox);
+
+        Mat temp = Mat(roi.rows, roi.cols, roi.type());
+        roi.copyTo(temp, roiMask);
+        cvtColor(temp, nextFrame, CV_BGR2GRAY);
+
+        //Get goodFeaturesToTrack
+        goodFeaturesToTrack(nextFrame, nextPts, nPts, qLevel, minDist);
+
+        resize(frame, frame, Size(), RES_SCALE, RES_SCALE, INTER_CUBIC);
         //Stores original resized frame
         auxFrame = frame.clone();
-        /*cout << "prevFrame: " << endl << prevFrame.size() << endl << endl;
-        cout << "nextFrame: " << endl << nextFrame.size() << endl << endl;
-        cout << "prevPts: " << endl << prevPts << endl << endl;
-        cout << "nextPts: " << endl << nextPts << endl << endl;*/
-        //waitKey(0);
+
+        cout << "Antes do OpticalFLow" << endl;
         calcOpticalFlowPyrLK(prevFrame, nextFrame, prevPts, nextPts, status, err);
-        prevPts = nextPts;
+
         cout << "Depois do OpticalFLow" << endl;
         //draws compass
         drawCompass(frame);
@@ -373,12 +338,10 @@ int main(int argc, char** argv) {
 				}
 			}
       //Multiple point tracking
-      if(func == 1)
-      {
+      if(func == 1){
         cout << "func 1" << endl;
         drawCompass(frame);
-        for(unsigned int k = 0; k < actualPts.size(); k++)
-        {
+        for(unsigned int k = 0; k < actualPts.size(); k++) {
             pointsHistory[k].push_back(actualPts[k]);
         }
 
@@ -386,34 +349,36 @@ int main(int argc, char** argv) {
 
         calcOpticalFlowPyrLK(prevFrame, nextFrame, actualPts, out, status, err);
         actualPts = out;
-
-        for(unsigned int i = 0; i < pointsHistory.size(); i++)
-        {
+        vector <int> tempColor;
+        for(unsigned int i = 0; i < pointsHistory.size(); i++){
           //cout << "Entrou no for" << endl;
           vector < Point2f > points = pointsHistory[i];
-          for(unsigned int k = 1; k < points.size(); k++)
-          {
+          for(unsigned int k = 1; k < points.size(); k++){
             //Draws line, if it's the actual point then draws yellow line
-            line(frame, points[k-1], points[k], (k == points.size() - 1) ? color[11] : color[VecOrientation(points[k-1])], 2);
-            //cout << "Desenhou a linha";
-            //cout << "" << endl << points[k] << endl;
-            //waitKey(0);
+            line(frame, points[k-1], points[k], (k == points.size() - 1) ? color[11] : color[VecOrientation(points[k]-points[k-1])], 2);
           }
         }
       }
       //ROI tracking
-      else if(func == 2)
-      {
+      else if(func == 2){
         cout << "Func 2" << endl;
         drawCompass(frame);
-        for(unsigned int k = 0; k < actualPts.size(); k++)
-        {
+        for(unsigned int k = 0; k < actualPts.size(); k++){
             pointsHistory[k].push_back(actualPts[k]);
         }
 
         vector<Point2f> out;
 
         calcOpticalFlowPyrLK(prevFrame, nextFrame, actualPts, out, status, err);
+        subtract(out, actualPts, oriVec);
+
+        //Flushes orientations vector for new frame
+        oriVec.clear();
+        for(unsigned int i=0; i<out.size(); i++){
+          oriVec.push_back(out[i]);
+          //vector color attribution
+          cidx = VecOrientation(out[i]);
+        }
         actualPts = out;
         //Draw polygon using points
         roi_polygon(out, frame);
@@ -423,16 +388,15 @@ int main(int argc, char** argv) {
 		//calculates orientation's histogram and displays it
 		if (hist && func != 1) {
 			Mat histImg;
-      cout << "Entrou no calculate orientation's histogram" << endl;
 	    getHist(histImg, oriVec);
-      cout << "Depois do getHist" << endl;
 	    imshow("Orientation's Histogram", histImg);
-      cout << "Depois do imshow Orientation Histogram" << endl;
 		}
 		else destroyWindow("Orientation's Histogram");
 
 		if (traj) imshow("Movement Tracking", frame);	//shows frame with flow
-		else imshow("Movement Tracking", auxFrame);		//shows original capture
+		else {imshow("Movement Tracking", auxFrame);		//shows original capture
+    cout << endl << "A MOSTRAR MOVEMENT" << endl;
+  }
 
 		//user input behaviour
 		char key = waitKey(33);
@@ -446,7 +410,6 @@ int main(int argc, char** argv) {
 
 	    		//shows median of all orientations
 	    		if (func == 0 || func == 2) {
-            cout << "Entrou no show median of all orientations" << endl;
 	    			if (!drmed) {
 	    				drmed = 1;
 
@@ -467,10 +430,7 @@ int main(int argc, char** argv) {
 	    				sprintf(auxch, "%.2f)", oriAux[1]);
 	    				putText(auxFrame, auxch, Point(15, 55), FONT_HERSHEY_PLAIN, 1, color[8]);
 	    			}
-            cout << "Depois do show median of all orientations" << endl;
 	    		}
-
-          cout << "Display Frame" << endl;
 	    		//displays frame
 	    		if (traj) imshow("Movement Tracking", frame);
 				else imshow("Movement Tracking", auxFrame);
