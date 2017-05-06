@@ -1,44 +1,53 @@
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include "opencv2/imgproc.hpp"
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
+#include <iostream>
+#include <stdio.h>
+#include <stdlib.h>
 using namespace cv;
-
-int main( )
+using namespace std;
+int main( void )
 {
-  // Create black empty images
-  Mat image = Mat::zeros( 400, 400, CV_8UC3 );
-
-  int w=400;
-  // Draw a circle
-  /** Create some points */
-  Point rook_points[1][20];
-  rook_points[0][0] = Point( w/4.0, 7*w/8.0 );
-  rook_points[0][1] = Point( 3*w/4.0, 7*w/8.0 );
-  rook_points[0][2] = Point( 3*w/4.0, 13*w/16.0 );
-  rook_points[0][3] = Point( 11*w/16.0, 13*w/16.0 );
-  rook_points[0][4] = Point( 19*w/32.0, 3*w/8.0 );
-  rook_points[0][5] = Point( 3*w/4.0, 3*w/8.0 );
-  rook_points[0][6] = Point( 3*w/4.0, w/8.0 );
-  rook_points[0][7] = Point( 26*w/40.0, w/8.0 );
-  rook_points[0][8] = Point( 26*w/40.0, w/4.0 );
-  rook_points[0][9] = Point( 22*w/40.0, w/4.0 );
-  rook_points[0][10] = Point( 22*w/40.0, w/8.0 );
-  rook_points[0][11] = Point( 18*w/40.0, w/8.0 );
-  rook_points[0][12] = Point( 18*w/40.0, w/4.0 );
-  rook_points[0][13] = Point( 14*w/40.0, w/4.0 );
-  rook_points[0][14] = Point( 14*w/40.0, w/8.0 );
-  rook_points[0][15] = Point( w/4.0, w/8.0 );
-  rook_points[0][16] = Point( w/4.0, 3*w/8.0 );
-  rook_points[0][17] = Point( 13*w/32.0, 3*w/8.0 );
-  rook_points[0][18] = Point( 5*w/16.0, 13*w/16.0 );
-  rook_points[0][19] = Point( w/4.0, 13*w/16.0) ;
-
-  const Point* ppt[1] = { rook_points[0] };
-  int npt[] = { 20 };
-
-  fillPoly( image, ppt, npt, 1, Scalar( 255, 255, 255 ), 8 );
-  imshow("Image",image);
-
-  waitKey( 0 );
+  const int r = 100;
+  Mat src = Mat::zeros( Size( 4*r, 4*r ), CV_8UC1 );
+  vector<Point2f> vert(6);
+  vert[0] = Point( 3*r/2, static_cast<int>(1.34*r) );
+  vert[1] = Point( 1*r, 2*r );
+  vert[2] = Point( 3*r/2, static_cast<int>(2.866*r) );
+  vert[3] = Point( 5*r/2, static_cast<int>(2.866*r) );
+  vert[4] = Point( 3*r, 2*r );
+  vert[5] = Point( 5*r/2, static_cast<int>(1.34*r) );
+  for( int j = 0; j < 6; j++ )
+     { line( src, vert[j],  vert[(j+1)%6], Scalar( 255 ), 3, 8 ); }
+  vector<vector<Point> > contours; vector<Vec4i> hierarchy;
+  Mat src_copy = src.clone();
+  imshow("src_copy", src_copy);
+  waitKey(0);
+  findContours( src_copy, contours, hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE);
+  Mat raw_dist( src.size(), CV_32FC1 );
+  for( int j = 0; j < src.rows; j++ )
+     { for( int i = 0; i < src.cols; i++ )
+          { raw_dist.at<float>(j,i) = (float)pointPolygonTest( contours[0], Point2f((float)i,(float)j), true ); }
+     }
+  double minVal; double maxVal;
+  minMaxLoc( raw_dist, &minVal, &maxVal, 0, 0, Mat() );
+  minVal = abs(minVal); maxVal = abs(maxVal);
+  Mat drawing = Mat::zeros( src.size(), CV_8UC3 );
+  for( int j = 0; j < src.rows; j++ )
+     { for( int i = 0; i < src.cols; i++ )
+          {
+            if( raw_dist.at<float>(j,i) < 0 )
+              { drawing.at<Vec3b>(j,i)[0] = (uchar)(255 - abs(raw_dist.at<float>(j,i))*255/minVal); }
+            else if( raw_dist.at<float>(j,i) > 0 )
+              { drawing.at<Vec3b>(j,i)[2] = (uchar)(255 - raw_dist.at<float>(j,i)*255/maxVal); }
+            else
+              { drawing.at<Vec3b>(j,i)[0] = 255; drawing.at<Vec3b>(j,i)[1] = 255; drawing.at<Vec3b>(j,i)[2] = 255; }
+          }
+     }
+  const char* source_window = "Source";
+  namedWindow( source_window, WINDOW_AUTOSIZE );
+  imshow( source_window, src );
+  namedWindow( "Distance", WINDOW_AUTOSIZE );
+  imshow( "Distance", drawing );
+  waitKey(0);
   return(0);
 }
