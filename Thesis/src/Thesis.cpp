@@ -36,7 +36,7 @@ using namespace cv;
 #define PI 			3.14159	//pi
 
 //global variables
-Mat roiFrame, roiAux, auxBlackFrame;
+Mat roiFrame, roiAux, auxBlackFrame, frame;
 Mat mask, roiMask;    //ROI of Polygon converted to Matrix form
 Rect roiBox;
 vector<Point2f> roiPts;		//points defining a ROI
@@ -95,7 +95,7 @@ int main(int argc, char** argv) {
 	bool drmed = 0;
 
 	//matrixes declaration
-	Mat frame, prevFrame, nextFrame, roi, flow, auxFrame;
+	Mat prevFrame, nextFrame, roi, flow, auxFrame;
 	UMat flowUMat;
 
 	//vectors  and points declaration
@@ -196,7 +196,7 @@ int main(int argc, char** argv) {
 			}
 
 			//resizes video frames for viewing purposes
-			resize(frame, frame, Size(), RES_SCALE, RES_SCALE, INTER_CUBIC);
+			//resize(frame, frame, Size(), RES_SCALE, RES_SCALE, INTER_CUBIC);
 
 			//converts frame to grayscale
 			cvtColor(frame, nextFrame, CV_BGR2GRAY);
@@ -204,29 +204,27 @@ int main(int argc, char** argv) {
 			if (func == 0 || func == 1 || func == 2){
 				//images for selection
 				roiFrame = frame.clone();
-				roiAux = roiFrame.clone();
+        medianBlur(roiFrame, roiFrame, 5);
+				roiAux = frame.clone();
         auxBlackFrame = Mat::zeros(frame.size(), CV_8UC1);
 
+        //imshow("roiFrame", roiFrame);
+
 				//mouse callback for selecting ROI
-				imshow("ROI Selection", roiFrame);
+				imshow("ROI Selection", frame);
 				setMouseCallback("ROI Selection", roiSelection);
         waitKey(0);
 
         if(func == 0){
-          line(roiFrame, roiPts[roiPts.size()-1], roiPts[0], color[4], 2, 8);
+          line(frame, roiPts[roiPts.size()-1], roiPts[0], color[4], 2, 8);
           line(auxBlackFrame, roiPts[roiPts.size()-1], roiPts[0], color[4], 1, 8);
 
-          imshow("ROI Selection", roiFrame);
+          imshow("ROI Selection", frame);
           waitKey(0);
           //Create Polygon from vertices (roiPts)
           approxPolyDP(roiPts, ROI_Poly, 1.0, true);
 
           Mat mask = Mat::zeros(roiFrame.size(), CV_8UC1);
-
-          // Fill polygon white
-          fillConvexPoly(mask, &ROI_Poly[0], ROI_Poly.size(), color[8]);
-
-          //cout << "Contours[0]" << endl << contours[0] << endl;
 
           //Initializes prevPts vector
           prevPts = nextPts;
@@ -255,8 +253,8 @@ int main(int argc, char** argv) {
 					}
 				}
         else if (func == 2){
-          line(roiFrame, roiPts[roiPts.size()-1], roiPts[0], color[4], 1, 8);
-          imshow("ROI Selection", roiFrame);
+          line(frame, roiPts[roiPts.size()-1], roiPts[0], color[4], 1, 8);
+          imshow("ROI Selection", frame);
           waitKey(0);
         }
 				else {
@@ -274,7 +272,6 @@ int main(int argc, char** argv) {
     prevPts = nextPts;
     //stores last frame analysis
     auxFrame = frame.clone();
-    //cout << "Fez a inicialização dos prevPts e auxFrame" << endl << endl;
 
 		prevFrame = nextFrame.clone();		//first frame is the same as last one
 		cap >> frame;						//gets a new frame from camera
@@ -291,7 +288,7 @@ int main(int argc, char** argv) {
 		//resizesconverts to grayscale
     if (func == 1 || func == 2)
     {
-      resize(frame, frame, Size(), RES_SCALE, RES_SCALE, INTER_CUBIC);
+      //resize(frame, frame, Size(), RES_SCALE, RES_SCALE, INTER_CUBIC);
 
       cvtColor(frame, nextFrame, CV_BGR2GRAY);
     }
@@ -301,7 +298,7 @@ int main(int argc, char** argv) {
 			//calculates optical flow using Lucas-Kanade
       if(func == 0)
       {
-        resize(frame, frame, Size(), RES_SCALE, RES_SCALE, INTER_CUBIC);
+        //resize(frame, frame, Size(), RES_SCALE, RES_SCALE, INTER_CUBIC);
         cvtColor(frame, nextFrame, CV_BGR2GRAY);
 
         //Stores original resized frame
@@ -336,21 +333,10 @@ int main(int argc, char** argv) {
         //Draws ROI Polygon
         roi_polygon(roiPts, frame);
 
-        //cout << "Contour" << endl << contours << endl;
-        //cout << "prevPts: " << endl << prevPts << endl << endl;
-
         //draws motion lines on display
         for (unsigned int i = 0; i < prevPts.size(); i++) {
           if (status[i]) {
             if(pnpoly(cnt, scaledRoiPts, prevPts[i])){
-              /*
-              cout << "roiBox.x: " << endl << roiBox.x << endl;
-              cout << "roiBox.y: " << endl << roiBox.y << endl << endl;
-              cout << "prevPts[i].x: " << endl << prevPts[i].x << endl;
-              cout << "prevPts[i].y: " << endl << prevPts[i].y << endl << endl;
-              cout << "oriVec[i].x: " << endl << oriVec[i].x << endl;
-              cout << "oriVec[i].y: " << endl << oriVec[i].y << endl << endl << endl;
-              */
               x1 = roiBox.x + prevPts[i].x;	//initial pts
               y1 = roiBox.y + prevPts[i].y;
               x2 = x1 + oriVec[i].x*LK_SCALE;		//final pts = initial pts +
@@ -396,16 +382,19 @@ int main(int argc, char** argv) {
         calcOpticalFlowPyrLK(prevFrame, nextFrame, actualPts, out, status, err);
         subtract(out, actualPts, oriVec);
 
-        //Flushes orientations vector for new frame
+        //Flushes orientations vector for new frame and draws corner circles
         oriVec.clear();
         for(unsigned int i=0; i<out.size(); i++){
           oriVec.push_back(out[i]);
-          //vector color attribution
-          cidx = VecOrientation(out[i]);
+          circle(frame, out[i], 5, color[0], 1);
         }
+
+
         actualPts = out;
+
         //Draw polygon using points
         roi_polygon(out, frame);
+
       }
 		}
 
@@ -432,7 +421,7 @@ int main(int argc, char** argv) {
 	    		key = waitKey(5);
 
 	    		//shows median of all orientations
-	    		if (func == 0 || func == 2) {
+	    		if (func == 0) {
 	    			if (!drmed) {
 	    				drmed = 1;
 
@@ -511,10 +500,10 @@ static void roiSelection(int event, int x, int y, int, void*) {
 					roiPts.push_back(selected);
 
 					//displays selected point
-					circle(roiFrame, selected, 5, color[0], 1);
+					circle(frame, selected, 5, color[0], 1);
           //circle(auxBlackFrame, selected, 5, color[0], 1);
           if(cnt>=2){
-            line(roiFrame, roiPts[cnt-2], roiPts[cnt-1], color[4], 2, 8);
+            line(frame, roiPts[cnt-2], roiPts[cnt-1], color[4], 2, 8);
             line(auxBlackFrame, roiPts[cnt-2], roiPts[cnt-1], color[4], 1, 8);
           }
 				}
@@ -527,34 +516,34 @@ static void roiSelection(int event, int x, int y, int, void*) {
           actualPts.push_back(Point(x, y));
 
 					//displays selected point
-					circle(roiFrame, selected, 5, color[0], 1);
+					circle(frame, selected, 5, color[0], 1);
 
 					//stores ROI
 					roiBox = rectLimits(actualPts);
 				}
         else if(func == 2)
         {
-          cout << "Entrou no roiSelection func == 2" << endl;
           Point selected = Point(x,y);
           roiPts.push_back(selected);
           actualPts.push_back(selected);
 
           //displays selected point
-          circle(roiFrame, selected, 5, color[0], 1);
+          circle(frame, selected, 5, color[0], 1);
           if(cnt>=2)
           {
-            line(roiFrame, roiPts[cnt-2], roiPts[cnt-1], color[4], 2, 8);
+            line(frame, roiPts[cnt-2], roiPts[cnt-1], color[4], 2, 8);
           }
         }
-        imshow("ROI Selection", roiFrame);
+        imshow("ROI Selection", frame);
       break;
 
     case CV_EVENT_RBUTTONDOWN:
       //flushes point vector
-      roiFrame = roiAux.clone();
+      frame = roiAux.clone();
       roiPts.clear();
+      actualPts.clear();
       cnt = 0;
-      imshow("ROI Selection", roiFrame);
+      imshow("ROI Selection", frame);
       break;
 	}
 }

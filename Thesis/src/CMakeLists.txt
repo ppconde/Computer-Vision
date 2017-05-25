@@ -6,8 +6,8 @@ target_link_libraries(Thesis ${OpenCV_LIBS} ${PCL_LIBRARIES})
 #target_link_libraries(Mouse ${OpenCV_LIBS} ${PCL_LIBRARIES})
 #
 
-add_executable(Poly Poly.cpp)
-target_link_libraries(Poly ${OpenCV_LIBS} ${PCL_LIBRARIES})
+#add_executable(Poly Poly.cpp)
+#target_link_libraries(Poly ${OpenCV_LIBS} ${PCL_LIBRARIES})
 #
 
 #add_executable(Ellipse Ellipse.cpp)
@@ -22,6 +22,6 @@ target_link_libraries(Poly ${OpenCV_LIBS} ${PCL_LIBRARIES})
 #target_link_libraries(Hull ${OpenCV_LIBS} ${PCL_LIBRARIES})
 #
 
-add_executable(1 1.cpp)
-target_link_libraries(1 ${OpenCV_LIBS} ${PCL_LIBRARIES})
+#add_executable(1 1.cpp)
+#target_link_libraries(1 ${OpenCV_LIBS} ${PCL_LIBRARIES})
 #
