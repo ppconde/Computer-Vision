@@ -13,6 +13,7 @@
 
 
 #include <iostream>
+#include <string>
 #include <sstream>
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
@@ -26,13 +27,13 @@ using namespace std;
 using namespace cv;
 
 //pre-processor defines
+#define ULTRASOUND_SCALE 20
 #define TRAJ_INIT	0
 #define HIST_INIT	0
+#define TABLE_INIT 0
 #define RES_SCALE	1.5		//image resizing scale
-#define STEP 		10		//Farneback grid spacing in pix
 #define FLOW_SZ 	0.5		//minimum flow size
 #define LK_SCALE	5		//Lucas-Kanade flow scale
-#define FB_SCALE	10		//Farneback flow scale
 #define PI 			3.14159	//pi
 
 //global variables
@@ -45,7 +46,13 @@ vector<vector <Point2f> > pointsHistory; //Point history
 vector<vector<Point> > contours; vector<Vec4i> hierarchy;
 vector <Point> ROI_Poly;    //Region of interest polygon
 vector <Point2f> scaledRoiPts;
+vector <double> travRes;    //Traveled Space values
+vector <double> displacement;   //Displacement values
 
+
+int frameHeightTop, frameHeightBot, actualFrameHeight;
+double travSpace = 0;   //Traveled space, ROI tracking method
+float dispSpace = 0;   //Displacement, ROI tracking method
 unsigned int cnt = 0;		//mouse clicks counter
 bool cntFirst = true;
 unsigned int func;		//for program function
@@ -78,17 +85,22 @@ void drawCompass(Mat&);
 
 void getHist(Mat&, vector<Point2f>);
 
+void getTable(Mat& tableImg, int rows, int cols, vector <double> displacement, vector <double> travRes);
+
 void roi_polygon(vector<Point2f>, Mat);
 
 Rect rectLimits(vector<Point2f>);
 
 int pnpoly(int nvert, vector<Point2f> roiPts, Point2f prevPt);
 
+Point2f getMC(vector <Point2f> points);
+
 //main routine
 int main(int argc, char** argv) {
 	int sel;							//video selection
 	bool traj = TRAJ_INIT;				//trajectory visualization
 	bool hist = HIST_INIT;				//histogram visualization
+  bool table = TABLE_INIT;      //Table visualization
 	char file[20];
 	char auxch[50];
 	int linesz;							//line thickness
@@ -130,6 +142,7 @@ int main(int argc, char** argv) {
 		 << "\tSpace\t- pauses the video" << endl
 		 << "\tS\t- toggles movement trajectories (hidden by default)" << endl
 		 << "\tH\t- toggles histogram (hidden by default)" << endl
+     << "\tT\t- toggles movement's table (hidden by default)" << endl
 		 << "\tEsc\t- exits the program" << endl
 		 << " The movement quantification is color coded:" << endl
 		 << "\tRed\t- E (-22.5º to 22.5º)\tOrange\t- NE (22.5º to 67.5º)" << endl
@@ -209,6 +222,20 @@ int main(int argc, char** argv) {
         auxBlackFrame = Mat::zeros(frame.size(), CV_8UC1);
 
         //imshow("roiFrame", roiFrame);
+
+        //Measure actual video pixel height
+        for(int i = 0; i < frame.rows ; i++){
+          if(frame.at<int>(i, frame.cols)<0){
+            frameHeightBot = i;  //AZUL
+          }
+        }
+
+        for(int i = frame.rows; i > 0 ; i--){
+          if(frame.at<int>(i, frame.cols)<=1){
+            frameHeightTop = i;  //VERMELHO
+          }
+        }
+        actualFrameHeight = frameHeightBot - frameHeightTop;
 
 				//mouse callback for selecting ROI
 				imshow("ROI Selection", frame);
@@ -317,7 +344,7 @@ int main(int argc, char** argv) {
               scaledRoiPts[i].x = scaledRoiPts[i].x - roiBox.x;
               scaledRoiPts[i].y = scaledRoiPts[i].y - roiBox.y;
             }
-            cntFirst = false;
+            cntFirst=false;
         }
 
         findContours(auxBlackFrame, contours, hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE);
@@ -358,16 +385,39 @@ int main(int argc, char** argv) {
         }
 
         vector<Point2f> out;
+        Point2d oriDistVec, oriDispVec;
+        vector <double> travPts(pointsHistory.size(),0);
+        travRes.resize(pointsHistory.size());
+        displacement.resize(pointsHistory.size());
 
         calcOpticalFlowPyrLK(prevFrame, nextFrame, actualPts, out, status, err);
         actualPts = out;
-        vector <int> tempColor;
         for(unsigned int i = 0; i < pointsHistory.size(); i++){
           vector < Point2f > points = pointsHistory[i];
+
           for(unsigned int k = 1; k < points.size(); k++){
             //Draws line, if it's the actual point then draws yellow line
             line(frame, points[k-1], points[k], (k == points.size() - 1) ? color[11] : color[VecOrientation(points[k]-points[k-1])], 2);
+
+            if(k+1 == points.size()){
+              //Calculate traveled space
+              oriDistVec = (points[k]-points[k-1]);
+              travPts[i] = (ULTRASOUND_SCALE*sqrt(oriDistVec.x*oriDistVec.x + oriDistVec.y*oriDistVec.y)/actualFrameHeight);
+            }
           }
+          //Calculate traveled space
+          add(travRes, travPts, travRes);
+          //Calculate displacement
+          oriDispVec = (points[points.size()-1]-points[0]);
+
+          displacement[i] = ULTRASOUND_SCALE*sqrt(oriDispVec.x*oriDispVec.x + oriDispVec.y*oriDispVec.y)/actualFrameHeight;
+
+          stringstream ss_i, ss_displacement, ss_travRes;
+          ss_i << i;
+          ss_displacement << displacement[i];
+          ss_travRes << travRes[i];
+
+          putText(frame, ss_i.str(), Point(points[0].x, points[0].y+20), FONT_HERSHEY_PLAIN, 1, color[8], 1);
         }
       }
       //ROI tracking
@@ -389,17 +439,51 @@ int main(int argc, char** argv) {
           circle(frame, out[i], 5, color[0], 1);
         }
 
+        //Traveled space and displacement orientation points
+        Point2d oriDistVec, oriDispVec;
+
+        //Calculate center of mass of ROI
+        Point2f massCenterNew = getMC(actualPts);
+
+        Point2f massCenter = getMC(out);
+
+        //Calculate ROIpts center of mass
+        Point2f massCenterInit = getMC(roiPts);
+
+        circle(frame, massCenterNew, 5, color[5], 2);
+        oriDistVec = massCenterNew - massCenter;
+
+        //Calculate traveled space
+        travSpace += (ULTRASOUND_SCALE*sqrt(oriDistVec.x*oriDistVec.x + oriDistVec.y*oriDistVec.y)/actualFrameHeight);
+        oriDispVec = massCenterNew - massCenterInit;
+        dispSpace = (ULTRASOUND_SCALE*sqrt(oriDispVec.x*oriDispVec.x + oriDispVec.y*oriDispVec.y)/actualFrameHeight);
+
+        stringstream ss_dispSpace, ss_travSpace;
+        ss_dispSpace << dispSpace;
+        ss_travSpace << travSpace;
+
+        putText(frame, "Displacement: " + ss_dispSpace.str() + " mm", Point(20, 420), FONT_HERSHEY_PLAIN, 1, color[8]);
+        putText(frame, "Traveled Space: " + ss_travSpace.str() + " mm", Point(20, 440), FONT_HERSHEY_PLAIN, 1, color[8]);
+
+        //putText()
 
         actualPts = out;
 
         //Draw polygon using points
         roi_polygon(out, frame);
-
       }
 		}
 
+    //calculates orientation's histogram and displays it
+		if (table && func == 1) {
+			Mat tableImg;
+      getTable(tableImg, pointsHistory.size(), 3, displacement, travRes);
+      imshow("Movement's Table", tableImg);
+		}
+		else destroyWindow("Movement's Table");
+
 		//calculates orientation's histogram and displays it
-		if (hist && func != 1) {
+		if (hist && func == 0) {
 			Mat histImg;
 	    getHist(histImg, oriVec);
 	    imshow("Orientation's Histogram", histImg);
@@ -476,6 +560,8 @@ int main(int argc, char** argv) {
 
 	    //if "H" pressed, toggles histogram
 	    if (key == 'h' || key == 'H') hist = !hist;
+
+      if (key == 't' || key == 'T') table = !table;
 
 	    //if "esc" pressed, exits
 	    if (key == 27) {
@@ -698,4 +784,48 @@ int pnpoly(int nvert, vector<Point2f> roiPts, Point2f prevPt)
        c = !c;
   }
   return c;
+}
+void getTable(Mat& tableImg, int rows, int cols, vector <double> displacement, vector <double> travRes){
+  int tableW = 512, tableH = 600;				//sets size of window
+  Mat tableImage(tableH, tableW, CV_8UC3, Scalar(0, 0, 0));
+  tableImg = tableImage.clone();
+  rows = rows+1;
+  int widthStep = 30, heightStep = (tableH/rows)*1/2;
+
+
+  //Draws table
+  for(int i = 1; i < rows; i ++){
+    for(int j = 1; j < cols; j++){
+      line(tableImg, Point((tableW/cols)*j, 0), Point((tableW/cols)*j, tableH),Scalar(255, 255, 255));
+
+      stringstream ss_i, ss_displacement, ss_travRes;
+      ss_i << i-1;
+      ss_displacement << displacement[i-1];
+      ss_travRes << travRes[i-1];
+
+      //Index of point
+      putText(tableImg, ss_i.str(), Point(((tableW/cols)/2), heightStep + (tableH/rows)*i), FONT_HERSHEY_PLAIN, 1, color[8]);
+
+      //Displacement values
+      putText(tableImg, "Displacement", Point((tableW/cols)+widthStep, heightStep), FONT_HERSHEY_PLAIN, 1, color[8]);
+      putText(tableImg, "(mm)", Point((tableW/cols)+widthStep, heightStep + 20), FONT_HERSHEY_PLAIN, 1, color[8]);
+      putText(tableImg, ss_displacement.str(), Point((tableW/cols)+widthStep, heightStep + (tableH/rows)*i), FONT_HERSHEY_PLAIN, 1, color[8]);
+
+      //Traveled space values
+      putText(tableImg, "Trav Space", Point((tableW/cols)*(cols-1) +widthStep, heightStep), FONT_HERSHEY_PLAIN, 1, color[8]);
+      putText(tableImg, "(mm)", Point((tableW/cols)*(cols-1) +widthStep, heightStep + 20), FONT_HERSHEY_PLAIN, 1, color[8]);
+      putText(tableImg, ss_travRes.str(), Point((tableW/cols)*(cols-1) +widthStep, heightStep + (tableH/rows)*i), FONT_HERSHEY_PLAIN, 1, color[8]);
+
+    }
+    line(tableImg, Point(0, (tableH/rows)*i), Point(tableW, (tableH/rows)*i),Scalar(255, 255, 255));
+  }
+}
+Point2f getMC(vector <Point2f> points){
+  double totalX=0.0, totalY=0.0;
+  for(unsigned int i = 0; i < points.size(); i++){
+    totalX+=points[i].x;
+    totalY+=points[i].y;
+  }
+  Point2d massCenter(totalX/points.size(), totalY/points.size()); // condition: size != 0
+  return massCenter;
 }
