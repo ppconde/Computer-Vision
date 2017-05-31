@@ -27,7 +27,7 @@ using namespace std;
 using namespace cv;
 
 //pre-processor defines
-#define ULTRASOUND_SCALE 20
+#define ULTRASOUND_SCALE 30
 #define TRAJ_INIT	0
 #define HIST_INIT	0
 #define TABLE_INIT 0
@@ -46,9 +46,10 @@ vector<vector <Point2f> > pointsHistory; //Point history
 vector<vector<Point> > contours; vector<Vec4i> hierarchy;
 vector <Point> ROI_Poly;    //Region of interest polygon
 vector <Point2f> scaledRoiPts;
-vector <double> travRes;    //Traveled Space values
-vector <double> displacement;   //Displacement values
-
+vector <float> travRes;    //Traveled Space values
+vector <float> displacement;   //Displacement values
+vector <Point2f> oriDistVec;
+vector <float> vecDist(9, 0); //Euclidian distance for the histogram
 
 int frameHeightTop, frameHeightBot, actualFrameHeight;
 double travSpace = 0;   //Traveled space, ROI tracking method
@@ -56,6 +57,7 @@ float dispSpace = 0;   //Displacement, ROI tracking method
 unsigned int cnt = 0;		//mouse clicks counter
 bool cntFirst = true;
 unsigned int func;		//for program function
+int frameCnt = 0;     //frame counter
 
 //color structure for segmentation
 Scalar color[] =
@@ -83,9 +85,9 @@ int VecOrientation(Point2f);
 
 void drawCompass(Mat&);
 
-void getHist(Mat&, vector<Point2f>);
+Mat getHist(const vector<Point2f>&);
 
-void getTable(Mat& tableImg, int rows, int cols, vector <double> displacement, vector <double> travRes);
+void getTable(Mat& tableImg, int rows, int cols, vector <float> displacement, vector <float> travRes);
 
 void roi_polygon(vector<Point2f>, Mat);
 
@@ -96,7 +98,8 @@ int pnpoly(int nvert, vector<Point2f> roiPts, Point2f prevPt);
 Point2f getMC(vector <Point2f> points);
 
 //main routine
-int main(int argc, char** argv) {
+int main(int argc, char** argv) try
+{
 	int sel;							//video selection
 	bool traj = TRAJ_INIT;				//trajectory visualization
 	bool hist = HIST_INIT;				//histogram visualization
@@ -223,19 +226,25 @@ int main(int argc, char** argv) {
 
         //imshow("roiFrame", roiFrame);
 
+
         //Measure actual video pixel height
         for(int i = 0; i < frame.rows ; i++){
-          if(frame.at<int>(i, frame.cols)<0){
+          if(frame.at<int>(i, frame.cols-1)!=0){
             frameHeightBot = i;  //AZUL
           }
         }
 
         for(int i = frame.rows; i > 0 ; i--){
-          if(frame.at<int>(i, frame.cols)<=1){
+          if(frame.at<int>(i, frame.cols-1)!=0){
             frameHeightTop = i;  //VERMELHO
           }
         }
+
         actualFrameHeight = frameHeightBot - frameHeightTop;
+
+        circle(frame, Point(frame.cols, frameHeightTop), 5, color[5], 1);
+        circle(frame, Point(frame.cols, frameHeightBot), 5, color[1], 1);
+        cout << "actualFrameHeight: " << actualFrameHeight << endl;
 
 				//mouse callback for selecting ROI
 				imshow("ROI Selection", frame);
@@ -385,8 +394,9 @@ int main(int argc, char** argv) {
         }
 
         vector<Point2f> out;
-        Point2d oriDistVec, oriDispVec;
-        vector <double> travPts(pointsHistory.size(),0);
+        Point2d oriDispVec;
+        vector <float> travPts(pointsHistory.size(),0);
+
         travRes.resize(pointsHistory.size());
         displacement.resize(pointsHistory.size());
 
@@ -398,16 +408,27 @@ int main(int argc, char** argv) {
           for(unsigned int k = 1; k < points.size(); k++){
             //Draws line, if it's the actual point then draws yellow line
             line(frame, points[k-1], points[k], (k == points.size() - 1) ? color[11] : color[VecOrientation(points[k]-points[k-1])], 2);
-
-            if(k+1 == points.size()){
-              //Calculate traveled space
-              oriDistVec = (points[k]-points[k-1]);
-              travPts[i] = (ULTRASOUND_SCALE*sqrt(oriDistVec.x*oriDistVec.x + oriDistVec.y*oriDistVec.y)/actualFrameHeight);
-            }
           }
-          //Calculate traveled space
-          add(travRes, travPts, travRes);
-          //Calculate displacement
+          if(frameCnt == 0){
+            for(unsigned int j = 0; j < pointsHistory.size(); j++){
+              oriDistVec.push_back(Point2f(0,0));
+            }
+            travRes.assign((int)pointsHistory.size(), 0);
+            travPts.assign((int)pointsHistory.size(), 0);
+          }
+          if(frameCnt >0  ){
+            //Calculates orientation for each point
+              oriDistVec[i] = points[points.size()-1] - points[points.size()-2];
+          }
+
+          //Calculates distance in mm
+          travPts[i] = (ULTRASOUND_SCALE*sqrt(oriDistVec[i].x*oriDistVec[i].x + oriDistVec[i].y*oriDistVec[i].y)/actualFrameHeight);
+
+          //Calculates traveled space
+          travRes[i] = travPts[i] + travRes[i];
+          //add(travRes, travPts, travRes);
+
+          //Calculates displacement
           oriDispVec = (points[points.size()-1]-points[0]);
 
           displacement[i] = ULTRASOUND_SCALE*sqrt(oriDispVec.x*oriDispVec.x + oriDispVec.y*oriDispVec.y)/actualFrameHeight;
@@ -472,7 +493,8 @@ int main(int argc, char** argv) {
         //Draw polygon using points
         roi_polygon(out, frame);
       }
-		}
+      frameCnt++;
+    }
 
     //calculates orientation's histogram and displays it
 		if (table && func == 1) {
@@ -484,8 +506,7 @@ int main(int argc, char** argv) {
 
 		//calculates orientation's histogram and displays it
 		if (hist && func == 0) {
-			Mat histImg;
-	    getHist(histImg, oriVec);
+			Mat histImg = getHist(oriVec);
 	    imshow("Orientation's Histogram", histImg);
 		}
 		else destroyWindow("Orientation's Histogram");
@@ -542,9 +563,8 @@ int main(int argc, char** argv) {
 					}
 					else {
 						hist = 1;
-						Mat histImg;
-				    	getHist(histImg, oriVec);
-				    	imshow("Orientation's Histogram", histImg);
+						Mat histImg = getHist(oriVec);
+				    imshow("Orientation's Histogram", histImg);
 					}
 				}
 
@@ -571,6 +591,10 @@ int main(int argc, char** argv) {
 	}
 
 	return 0;
+}
+catch(exception& e)
+{
+  cout << e.what() << endl;
 }
 
 
@@ -639,17 +663,7 @@ int VecOrientation(Point2f pt1) {
 	// This function returns an int value corresponding to the vector orientation
 	int a;
 
-	Point2f pt2 = Point(1, 0);		//pt for horizontal vector
-	double l1, l2, dot, ang;		//dot product and lengths
-
-	//vector's angle calculation
-	l1 = sqrt(pt1.x*pt1.x + pt1.y*pt1.y);	//length of vector
-	l2 = pt2.x;								//length of aux vector
-	dot = pt1.x*pt2.x + pt1.y*pt2.y;		//dot product
-
-	float dir = (pt1.cross(pt2) >= 0 ? 1.0 : -1.0);	//direction calculation (+ or -)
-
-	ang = dir*acos(dot/(l1*l2))*180/PI;
+  double ang = atan2(pt1.y, pt1.x) * (180 / PI);
 
 	//orientation attribution
 	if (ang >= -22.5 && ang < 22.5) a = 0;
@@ -681,21 +695,24 @@ void drawCompass(Mat& frame) {
 }
 
 
-void getHist(Mat& histImg, vector<Point2f> vec) {
+Mat getHist(const vector<Point2f>& vec) {
 	// This function returns the histogram of the orientation's frequencies
 	int histW = 512, histH = 400;				//sets size of window
-	Mat histImage(histH, histW, CV_8UC3, Scalar(0, 0, 0));
-
-	histImg = histImage.clone();
+	Mat histImg(histH, histW, CV_8UC3, Scalar(0, 0, 0));
 
 	//orientation freq
-	int nbins = 9;
-	int freq[nbins] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+	const int nbins = 9;
+	static int freq[nbins] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-	//calculates frequency of orientations
 	for (unsigned int i = 0; i < vec.size(); i++) {
-		freq[VecOrientation(vec[i])]++;
+    int ori = VecOrientation(vec[i]);
+    //Calculates euclidian distance of orientation vector
+    vecDist[ori] = ULTRASOUND_SCALE * hypot(vec[i].x, vec[i].y) / actualFrameHeight;
+
+    //calculates frequency of orientations
+		freq[ori] += vecDist[ori];
 	}
+  cout << endl;
 
 	//displays initial histogram elements
 	int len = 43;
@@ -715,13 +732,13 @@ void getHist(Mat& histImg, vector<Point2f> vec) {
 
 	//displays histogram bars
 	int binW = cvRound((double)(histW-44)/nbins);	//width of bins
-	int maxVal = 2000;								//frequency max value (can actually be higher!)
+	int maxVal = 10;								//frequency max value (can actually be higher!)
 
 	for (int i = 0; i < nbins; i++) {
-		int binsz = freq[i]*histH/maxVal;			//bin height
+		float binsz = freq[i]*histH/maxVal;			//bin height
 
 		//draws bin
-		rectangle(histImg, Point(len+1+i*binW, histH), Point(len+(i+1)*binW, histH-binsz), color[i], CV_FILLED);
+		rectangle(histImg, Point2f(len + 1.0 + i*binW, histH), Point2f(len+(i+1.0)*binW, histH-binsz), color[i], CV_FILLED);
 
 		//displays bin value
 		stringstream ss;
@@ -735,6 +752,8 @@ void getHist(Mat& histImg, vector<Point2f> vec) {
 			putText(histImg, str, Point((i+1)*binW, 20), FONT_HERSHEY_PLAIN, 1, color[9]);
 		}
 	}
+
+  return histImg;
 }
 
 void roi_polygon(vector<Point2f> roiPts, Mat frame)
@@ -785,7 +804,7 @@ int pnpoly(int nvert, vector<Point2f> roiPts, Point2f prevPt)
   }
   return c;
 }
-void getTable(Mat& tableImg, int rows, int cols, vector <double> displacement, vector <double> travRes){
+void getTable(Mat& tableImg, int rows, int cols, vector <float> displacement, vector <float> travRes){
   int tableW = 512, tableH = 600;				//sets size of window
   Mat tableImage(tableH, tableW, CV_8UC3, Scalar(0, 0, 0));
   tableImg = tableImage.clone();
