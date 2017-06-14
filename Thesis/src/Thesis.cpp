@@ -27,14 +27,14 @@ using namespace std;
 using namespace cv;
 
 //pre-processor defines
-#define ULTRASOUND_SCALE 30
 #define TRAJ_INIT	0
-#define HIST_INIT	0
-#define TABLE_INIT 0
+#define HIST_INIT	1
+#define TABLE_INIT 1
 #define RES_SCALE	1.5		//image resizing scale
 #define FLOW_SZ 	0.5		//minimum flow size
 #define LK_SCALE	5		//Lucas-Kanade flow scale
 #define PI 			3.14159	//pi
+#define HIST_SCALE 10
 
 //global variables
 Mat roiFrame, roiAux, auxBlackFrame, frame;
@@ -58,6 +58,7 @@ unsigned int cnt = 0;		//mouse clicks counter
 bool cntFirst = true;
 unsigned int func;		//for program function
 int frameCnt = 0;     //frame counter
+int ultraScale;
 
 //color structure for segmentation
 Scalar color[] =
@@ -108,6 +109,7 @@ int main(int argc, char** argv) try
 	char auxch[50];
 	int linesz;							//line thickness
 	bool drmed = 0;
+  float initShapeH = 0.0, initShapeW = 0.0, shapeH = 0.0, shapeW = 0.0; //Shape width and height information
 
 	//matrixes declaration
 	Mat prevFrame, nextFrame, roi, flow, auxFrame;
@@ -177,6 +179,9 @@ int main(int argc, char** argv) try
 		return -1;
 	}
 
+  cout << endl << " Choose video scale in mm (e.g. 20, 30, etc): ";
+	cin >> ultraScale;
+
 	//analysis method selection
 	cout << endl << " Choose analysis method [0 = ROI (L-K), 1 = point (L-K), 2 = ROI Point Tracking (L-K)]: ";
 	cin >> func;
@@ -225,26 +230,35 @@ int main(int argc, char** argv) try
         auxBlackFrame = Mat::zeros(frame.size(), CV_8UC1);
 
         //imshow("roiFrame", roiFrame);
+        Mat frameCpy(frame.size(), CV_8UC1);
 
+        Mat binaryFrame(frame.size(), CV_8UC1);
+        frame.convertTo(frame, CV_8UC1);
+        threshold(frame, binaryFrame, 30, 255, THRESH_BINARY);
 
         //Measure actual video pixel height
-        for(int i = 0; i < frame.rows ; i++){
-          if(frame.at<int>(i, frame.cols-1)!=0){
-            frameHeightBot = i;  //AZUL
-          }
-        }
+         for(int i = 0; i < binaryFrame.rows ; i++){
 
-        for(int i = frame.rows; i > 0 ; i--){
-          if(frame.at<int>(i, frame.cols-1)!=0){
-            frameHeightTop = i;  //VERMELHO
-          }
-        }
+           if(binaryFrame.at<uint>(i, binaryFrame.cols-5) != 0){
+             frameHeightTop = i;  //AZUL
+             break;
+           }
+         }
 
-        actualFrameHeight = frameHeightBot - frameHeightTop;
+         for(int i = binaryFrame.rows; i > 0 ; i--){
+           //cout << binaryFrame.at<uint>(i, binaryFrame.cols) << endl;
+           if(binaryFrame.at<uint>(i, binaryFrame.cols-5) != 0){
+             frameHeightBot = i;  //VERMELHO
+             break;
+           }
+         }
+
+         actualFrameHeight = frameHeightBot - frameHeightTop;
 
         circle(frame, Point(frame.cols, frameHeightTop), 5, color[5], 1);
         circle(frame, Point(frame.cols, frameHeightBot), 5, color[1], 1);
-        cout << "actualFrameHeight: " << actualFrameHeight << endl;
+        //cout << "actualFrameHeight: " << actualFrameHeight << endl;
+
 
 				//mouse callback for selecting ROI
 				imshow("ROI Selection", frame);
@@ -314,7 +328,7 @@ int main(int argc, char** argv) try
 
 		//ends tracking if video ends
 		if(!frame.data) {
-			if (func == 1 || func == 2) {
+			if (func == 0 || func == 1 || func == 2) {
 				imshow("Movement Tracking", auxFrame);
 				waitKey(0);
 			}
@@ -422,7 +436,7 @@ int main(int argc, char** argv) try
           }
 
           //Calculates distance in mm
-          travPts[i] = (ULTRASOUND_SCALE*sqrt(oriDistVec[i].x*oriDistVec[i].x + oriDistVec[i].y*oriDistVec[i].y)/actualFrameHeight);
+          travPts[i] = (ultraScale*hypot(oriDistVec[i].x, oriDistVec[i].y)/actualFrameHeight);
 
           //Calculates traveled space
           travRes[i] = travPts[i] + travRes[i];
@@ -431,7 +445,7 @@ int main(int argc, char** argv) try
           //Calculates displacement
           oriDispVec = (points[points.size()-1]-points[0]);
 
-          displacement[i] = ULTRASOUND_SCALE*sqrt(oriDispVec.x*oriDispVec.x + oriDispVec.y*oriDispVec.y)/actualFrameHeight;
+          displacement[i] = ultraScale*hypot(oriDispVec.x, oriDispVec.y)/actualFrameHeight;
 
           stringstream ss_i, ss_displacement, ss_travRes;
           ss_i << i;
@@ -451,12 +465,8 @@ int main(int argc, char** argv) try
         vector<Point2f> out;
 
         calcOpticalFlowPyrLK(prevFrame, nextFrame, actualPts, out, status, err);
-        subtract(out, actualPts, oriVec);
 
-        //Flushes orientations vector for new frame and draws corner circles
-        oriVec.clear();
         for(unsigned int i=0; i<out.size(); i++){
-          oriVec.push_back(out[i]);
           circle(frame, out[i], 5, color[0], 1);
         }
 
@@ -464,34 +474,61 @@ int main(int argc, char** argv) try
         Point2d oriDistVec, oriDispVec;
 
         //Calculate center of mass of ROI
-        Point2f massCenterNew = getMC(actualPts);
+        Point2f massCenter = getMC(actualPts);
 
-        Point2f massCenter = getMC(out);
+        Point2f massCenterNew = getMC(out);
 
         //Calculate ROIpts center of mass
         Point2f massCenterInit = getMC(roiPts);
 
-        circle(frame, massCenterNew, 5, color[5], 2);
+        circle(frame, Point2f(massCenterNew.x, -massCenterNew.y), 5, color[5], 2);
         oriDistVec = massCenterNew - massCenter;
 
         //Calculate traveled space
-        travSpace += (ULTRASOUND_SCALE*sqrt(oriDistVec.x*oriDistVec.x + oriDistVec.y*oriDistVec.y)/actualFrameHeight);
+        travSpace += (ultraScale*hypot(oriDistVec.x, oriDistVec.y)/actualFrameHeight);
+
+        //Calculate displacement
         oriDispVec = massCenterNew - massCenterInit;
-        dispSpace = (ULTRASOUND_SCALE*sqrt(oriDispVec.x*oriDispVec.x + oriDispVec.y*oriDispVec.y)/actualFrameHeight);
+        dispSpace = (ultraScale*hypot(oriDispVec.x, oriDispVec.y)/actualFrameHeight);
 
         stringstream ss_dispSpace, ss_travSpace;
         ss_dispSpace << dispSpace;
         ss_travSpace << travSpace;
 
         putText(frame, "Displacement: " + ss_dispSpace.str() + " mm", Point(20, 420), FONT_HERSHEY_PLAIN, 1, color[8]);
-        putText(frame, "Traveled Space: " + ss_travSpace.str() + " mm", Point(20, 440), FONT_HERSHEY_PLAIN, 1, color[8]);
+        putText(frame, "Traveled Space: " + ss_travSpace.str() + " mm", Point(300, 420), FONT_HERSHEY_PLAIN, 1, color[8]);
 
-        //putText()
+        if(frameCnt == 1){
+          Rect initShape = rectLimits(roiPts);
+          initShapeH = initShape.height;
+          initShapeW = initShape.width;
 
+          initShapeH = initShapeH*ultraScale/actualFrameHeight;
+          initShapeW = initShapeW*ultraScale/actualFrameHeight;
+        }
+        Rect shape = rectLimits(actualPts);
+        shapeH = shape.height;
+        shapeW = shape.width;
+        shapeH = shapeH*ultraScale/actualFrameHeight;
+        shapeW = shapeW*ultraScale/actualFrameHeight;
+
+        stringstream ss_initShapeH, ss_initShapeW, ss_shapeH, ss_shapeW;
+        ss_initShapeH << initShapeH;
+        ss_initShapeW << initShapeW;
+        ss_shapeH << shapeH;
+        ss_shapeW << shapeW;
+
+        putText(frame, "Init height: " + ss_initShapeH.str() + " mm", Point(20, 440), FONT_HERSHEY_PLAIN, 1, color[8]);
+        putText(frame, "Init width: " + ss_initShapeW.str() + " mm", Point(20, 460), FONT_HERSHEY_PLAIN, 1, color[8]);
+        putText(frame, "Current height: " + ss_shapeH.str() + " mm", Point(300, 440), FONT_HERSHEY_PLAIN, 1, color[8]);
+        putText(frame, "Current width: " + ss_shapeW.str() + " mm", Point(300, 460), FONT_HERSHEY_PLAIN, 1, color[8]);
         actualPts = out;
 
         //Draw polygon using points
         roi_polygon(out, frame);
+        oriVec.clear();
+        oriVec.push_back(oriDistVec);
+        //cout << "oriVec: " << oriVec << endl;
       }
       frameCnt++;
     }
@@ -505,7 +542,7 @@ int main(int argc, char** argv) try
 		else destroyWindow("Movement's Table");
 
 		//calculates orientation's histogram and displays it
-		if (hist && func == 0) {
+		if (hist && (func == 0 || func == 2)) {
 			Mat histImg = getHist(oriVec);
 	    imshow("Orientation's Histogram", histImg);
 		}
@@ -658,7 +695,6 @@ static void roiSelection(int event, int x, int y, int, void*) {
 	}
 }
 
-
 int VecOrientation(Point2f pt1) {
 	// This function returns an int value corresponding to the vector orientation
 	int a;
@@ -680,8 +716,6 @@ int VecOrientation(Point2f pt1) {
 	return a;
 }
 
-
-
 void drawCompass(Mat& frame) {
 	// This function draws a compass at the top left corner of the image
 	arrowedLine(frame, Point(20*RES_SCALE, 20*RES_SCALE), Point(20*RES_SCALE+12*RES_SCALE, 20*RES_SCALE), color[0], 2);
@@ -697,52 +731,52 @@ void drawCompass(Mat& frame) {
 
 Mat getHist(const vector<Point2f>& vec) {
 	// This function returns the histogram of the orientation's frequencies
-	int histW = 512, histH = 400;				//sets size of window
+	int histW = 512, histH = 600;				//sets size of window
 	Mat histImg(histH, histW, CV_8UC3, Scalar(0, 0, 0));
 
 	//orientation freq
 	const int nbins = 9;
-	static int freq[nbins] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+	static float freq[nbins] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 	for (unsigned int i = 0; i < vec.size(); i++) {
     int ori = VecOrientation(vec[i]);
     //Calculates euclidian distance of orientation vector
-    vecDist[ori] = ULTRASOUND_SCALE * hypot(vec[i].x, vec[i].y) / actualFrameHeight;
+    vecDist[ori] = ultraScale * hypot(vec[i].x, vec[i].y) / (actualFrameHeight*vec.size());
 
     //calculates frequency of orientations
 		freq[ori] += vecDist[ori];
 	}
-  cout << endl;
 
 	//displays initial histogram elements
 	int len = 43;
-	line(histImg, Point(len, 0), Point(len, 400), color[8], 1);
-	putText(histImg, "250", Point(10, 348), FONT_HERSHEY_PLAIN, 1, color[8]);
-	line(histImg, Point(len/2, 350), Point(len, 350), color[8], 1);
-	line(histImg, Point(len+1, 350), Point(histW, 350), color[10], 1, 4);
-	putText(histImg, "500", Point(10, 298), FONT_HERSHEY_PLAIN, 1, color[8]);
-	line(histImg, Point(len/2, 300), Point(len, 300), color[8], 1);
-	line(histImg, Point(len+1, 300), Point(histW, 300), color[10], 1, 4);
-	putText(histImg, "1000", Point(0, 198), FONT_HERSHEY_PLAIN, 1, color[8]);
-	line(histImg, Point(len/2, 200), Point(len, 200), color[8], 1);
-	line(histImg, Point(len+1, 200), Point(histW, 200), color[10], 1, 4);
-	putText(histImg, "1500", Point(0, 98), FONT_HERSHEY_PLAIN, 1, color[8]);
-	line(histImg, Point(len/2, 100), Point(len, 100), color[8], 1);
-	line(histImg, Point(len+1, 100), Point(histW, 100), color[10], 1, 4);
+	line(histImg, Point(len, 0), Point(len, histH), color[8], 1);
+	putText(histImg, "7,5", Point(15, histH*1/4-5), FONT_HERSHEY_PLAIN, 1, color[8]);
+  line(histImg, Point(len/2, histH*1/4), Point(len, histH*1/4), color[8], 1);
+	line(histImg, Point(len+1, histH*1/4), Point(histW, histH*1/4), color[10], 1, 4);
+	putText(histImg, "5", Point(20, histH*2/4-5), FONT_HERSHEY_PLAIN, 1, color[8]);
+  line(histImg, Point(len/2, histH*2/4), Point(len, histH*2/4), color[8], 1);
+  line(histImg, Point(len+1, histH*2/4), Point(histW, histH*2/4), color[10], 1, 4);
+	putText(histImg, "2,5", Point(15, histH*3/4-5), FONT_HERSHEY_PLAIN, 1, color[8]);
+  line(histImg, Point(len/2, histH*3/4), Point(len, histH*3/4), color[8], 1);
+  line(histImg, Point(len+1, histH*3/4), Point(histW, histH*3/4), color[10], 1, 4);
+	putText(histImg, "1,25", Point(5, histH*7/8-5), FONT_HERSHEY_PLAIN, 1, color[8]);
+  line(histImg, Point(len/2, histH*7/8), Point(len, histH*7/8), color[8], 1); //LEFT LINE
+  line(histImg, Point(len+1, histH*7/8), Point(histW, histH*7/8), color[10], 1, 4);  //RIGHT LINE
+  putText(histImg, "mm", Point(10, 20), FONT_HERSHEY_PLAIN, 1, color[8]);
 
 	//displays histogram bars
 	int binW = cvRound((double)(histW-44)/nbins);	//width of bins
-	int maxVal = 10;								//frequency max value (can actually be higher!)
-
+	int const maxVal = 10;								//frequency max value (can actually be higher!)
+  float const res = histH/maxVal;
 	for (int i = 0; i < nbins; i++) {
-		float binsz = freq[i]*histH/maxVal;			//bin height
+		float binsz = freq[i] *	res;		//bin height
 
 		//draws bin
-		rectangle(histImg, Point2f(len + 1.0 + i*binW, histH), Point2f(len+(i+1.0)*binW, histH-binsz), color[i], CV_FILLED);
+		rectangle(histImg, Point(len + 1.0 + i*binW, histH), Point(len+(i+1.0)*binW, histH-binsz), color[i], CV_FILLED);
 
 		//displays bin value
 		stringstream ss;
-		ss << freq[i];
+		ss << trunc(freq[i]*1000)/1000;
 		string str = ss.str();
 
 		if (binsz <= histH - 15) {
@@ -845,6 +879,6 @@ Point2f getMC(vector <Point2f> points){
     totalX+=points[i].x;
     totalY+=points[i].y;
   }
-  Point2d massCenter(totalX/points.size(), totalY/points.size()); // condition: size != 0
+  Point2f massCenter(totalX/points.size(), -totalY/points.size()); // condition: size != 0
   return massCenter;
 }
