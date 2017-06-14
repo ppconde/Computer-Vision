@@ -230,24 +230,22 @@ int main(int argc, char** argv) try
         auxBlackFrame = Mat::zeros(frame.size(), CV_8UC1);
 
         //imshow("roiFrame", roiFrame);
-        Mat frameCpy(frame.size(), CV_8UC1);
 
-        Mat binaryFrame(frame.size(), CV_8UC1);
-        frame.convertTo(frame, CV_8UC1);
-        threshold(frame, binaryFrame, 30, 255, THRESH_BINARY);
+        Mat binaryFrame(nextFrame.size(), CV_8UC1);
+        threshold(nextFrame, binaryFrame, 50, 255, THRESH_BINARY);
 
         //Measure actual video pixel height
          for(int i = 0; i < binaryFrame.rows ; i++){
-
-           if(binaryFrame.at<uint>(i, binaryFrame.cols-5) != 0){
+           //cout << binaryFrame.at<uchar>(i, binaryFrame.cols-5) << endl;
+           if((uchar)binaryFrame.at<uchar>(i, binaryFrame.cols-5) != 0){
              frameHeightTop = i;  //AZUL
              break;
            }
          }
 
          for(int i = binaryFrame.rows; i > 0 ; i--){
-           //cout << binaryFrame.at<uint>(i, binaryFrame.cols) << endl;
-           if(binaryFrame.at<uint>(i, binaryFrame.cols-5) != 0){
+           //cout << binaryFrame.at<uchar>(i, binaryFrame.cols-5) << endl;
+           if((uchar)binaryFrame.at<uchar>(i, binaryFrame.cols-5) != 0){
              frameHeightBot = i;  //VERMELHO
              break;
            }
@@ -255,10 +253,15 @@ int main(int argc, char** argv) try
 
          actualFrameHeight = frameHeightBot - frameHeightTop;
 
-        circle(frame, Point(frame.cols, frameHeightTop), 5, color[5], 1);
-        circle(frame, Point(frame.cols, frameHeightBot), 5, color[1], 1);
+        circle(frame, Point(binaryFrame.cols-5, frameHeightTop), 5, color[5], 1);
+        circle(frame, Point(binaryFrame.cols-5, frameHeightBot), 5, color[1], 1);
+
+        circle(binaryFrame, Point(binaryFrame.cols-5, frameHeightTop), 5, color[5], 1);
+        circle(binaryFrame, Point(binaryFrame.cols-5, frameHeightBot), 5, color[1], 1);
+
         //cout << "actualFrameHeight: " << actualFrameHeight << endl;
 
+        //imshow("binaryFrame", binaryFrame);
 
 				//mouse callback for selecting ROI
 				imshow("ROI Selection", frame);
@@ -449,8 +452,8 @@ int main(int argc, char** argv) try
 
           stringstream ss_i, ss_displacement, ss_travRes;
           ss_i << i;
-          ss_displacement << displacement[i];
-          ss_travRes << travRes[i];
+          ss_displacement << trunc(displacement[i]*1000)/1000;
+          ss_travRes << trunc(travRes[i]*1000)/1000;
 
           putText(frame, ss_i.str(), Point(points[0].x, points[0].y+20), FONT_HERSHEY_PLAIN, 1, color[8], 1);
         }
@@ -492,8 +495,8 @@ int main(int argc, char** argv) try
         dispSpace = (ultraScale*hypot(oriDispVec.x, oriDispVec.y)/actualFrameHeight);
 
         stringstream ss_dispSpace, ss_travSpace;
-        ss_dispSpace << dispSpace;
-        ss_travSpace << travSpace;
+        ss_dispSpace << trunc(dispSpace*1000)/1000;
+        ss_travSpace << trunc(travSpace*1000)/1000;
 
         putText(frame, "Displacement: " + ss_dispSpace.str() + " mm", Point(20, 420), FONT_HERSHEY_PLAIN, 1, color[8]);
         putText(frame, "Traveled Space: " + ss_travSpace.str() + " mm", Point(300, 420), FONT_HERSHEY_PLAIN, 1, color[8]);
@@ -513,10 +516,10 @@ int main(int argc, char** argv) try
         shapeW = shapeW*ultraScale/actualFrameHeight;
 
         stringstream ss_initShapeH, ss_initShapeW, ss_shapeH, ss_shapeW;
-        ss_initShapeH << initShapeH;
-        ss_initShapeW << initShapeW;
-        ss_shapeH << shapeH;
-        ss_shapeW << shapeW;
+        ss_initShapeH << trunc(initShapeH*1000)/1000;
+        ss_initShapeW << trunc(initShapeW*1000)/1000;
+        ss_shapeH << trunc(shapeH*1000)/1000;
+        ss_shapeW << trunc(shapeW*1000)/1000;
 
         putText(frame, "Init height: " + ss_initShapeH.str() + " mm", Point(20, 440), FONT_HERSHEY_PLAIN, 1, color[8]);
         putText(frame, "Init width: " + ss_initShapeW.str() + " mm", Point(20, 460), FONT_HERSHEY_PLAIN, 1, color[8]);
@@ -853,8 +856,8 @@ void getTable(Mat& tableImg, int rows, int cols, vector <float> displacement, ve
 
       stringstream ss_i, ss_displacement, ss_travRes;
       ss_i << i-1;
-      ss_displacement << displacement[i-1];
-      ss_travRes << travRes[i-1];
+      ss_displacement << trunc(displacement[i-1]*1000)/1000;
+      ss_travRes << trunc(travRes[i-1]*1000)/1000;
 
       //Index of point
       putText(tableImg, ss_i.str(), Point(((tableW/cols)/2), heightStep + (tableH/rows)*i), FONT_HERSHEY_PLAIN, 1, color[8]);
