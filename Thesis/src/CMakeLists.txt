@@ -1,5 +1,15 @@
 add_executable(Thesis Thesis.cpp)
-target_link_libraries(Thesis ${OpenCV_LIBS} ${PCL_LIBRARIES})
+target_link_libraries(Thesis ${OpenCV_LIBS} ${PCL_LIBRARIES} ${PYTHON_LIBRARY} ${PYTHON_INCLUDE_DIRS} ${Boost_SYSTEM_LIBRARIES} ${Boost_FILESYSTEM_LIBRARIES})
+
+add_executable(Thesis Thesis.cpp)
+target_link_libraries(Thesis ${OpenCV_LIBS} ${PCL_LIBRARIES} ${PYTHON_LIBRARY} ${PYTHON_INCLUDE_DIRS} ${Boost_SYSTEM_LIBRARIES} ${Boost_FILESYSTEM_LIBRARIES})
+
+
+#add_executable(blob blob.cpp)
+#target_link_libraries(blob ${OpenCV_LIBS} ${PCL_LIBRARIES})
+#
+#add_executable(snake snake.cpp)
+#target_link_libraries(snake ${OpenCV_LIBS} ${PCL_LIBRARIES})
 #
 
 #add_executable(Mouse Mouse.cpp)

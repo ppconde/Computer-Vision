@@ -1,0 +1,1 @@
+/usr/bin/c++      CMakeFiles/Thesis.dir/Thesis.o  -o Thesis -rdynamic 

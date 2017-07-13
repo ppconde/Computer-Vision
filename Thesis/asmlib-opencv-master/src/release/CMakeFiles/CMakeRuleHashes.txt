@@ -1,0 +1,7 @@
+# Hashes of file build rules.
+a3518bd1ba5f8234730279212041a330 CMakeFiles/doc
+d1d95f85be78fd57c01356d211849d22 annotation/moc_mainwindow.cxx
+9e45e28fdad33e4e1cd57a91ced5af81 annotation/moc_photoview.cxx
+0f076c1a777b199aaf977dab018b2df4 annotation/moc_pointspaint.cxx
+712dc08fbf6ec250d5c0b94bc295a9b6 annotation/moc_singlephotoview.cxx
+2933ef75e73a16d52ad30199763cbb9b annotation/ui_mainwindow.h

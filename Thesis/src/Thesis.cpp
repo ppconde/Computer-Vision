@@ -11,7 +11,7 @@
 /*											 */
 /*===========================================*/
 
-
+#include <Python.h>
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -101,6 +101,8 @@ Point2f getMC(vector <Point2f> points);
 //main routine
 int main(int argc, char** argv) try
 {
+  //C++
+
 	int sel;							//video selection
 	bool traj = TRAJ_INIT;				//trajectory visualization
 	bool hist = HIST_INIT;				//histogram visualization
@@ -183,7 +185,7 @@ int main(int argc, char** argv) try
 	cin >> ultraScale;
 
 	//analysis method selection
-	cout << endl << " Choose analysis method [0 = ROI (L-K), 1 = point (L-K), 2 = ROI Point Tracking (L-K)]: ";
+	cout << endl << " Choose analysis method [0 = ROI (L-K), 1 = point (L-K), 2 = ROI Point Tracking (L-K)]: , 3 = Active Shape Modeling [ASM]";
 	cin >> func;
 
 	//properties for each program function
@@ -195,7 +197,7 @@ int main(int argc, char** argv) try
     			 << " Press ENTER when the selection is made." << endl;
 
 	}
-	else if (func == 1 || func == 2) {
+	else if (func == 1 || func == 2 || func == 3) {
 		linesz = 1;
 
 		cout << endl
@@ -222,10 +224,11 @@ int main(int argc, char** argv) try
 			//converts frame to grayscale
 			cvtColor(frame, nextFrame, CV_BGR2GRAY);
 
-			if (func == 0 || func == 1 || func == 2){
+			if (func == 0 || func == 1 || func == 2 || func == 3){
 				//images for selection
 				roiFrame = frame.clone();
         medianBlur(roiFrame, roiFrame, 5);
+
 				roiAux = frame.clone();
         auxBlackFrame = Mat::zeros(frame.size(), CV_8UC1);
 
@@ -291,7 +294,7 @@ int main(int argc, char** argv) try
           nextFrame = nextFrame(roiBox);
         }
 
-        else if(func == 1 || func  == 2){
+        else if(func == 1 || func  == 2 || func == 3){
           for(unsigned int k = 0; k < roiPts.size(); k++){
             pointsHistory.push_back(vector<Point2f>());
           }
@@ -305,7 +308,7 @@ int main(int argc, char** argv) try
             }
 					}
 				}
-        else if (func == 2){
+        else if (func == 2 || func == 3){
           line(frame, roiPts[roiPts.size()-1], roiPts[0], color[4], 1, 8);
           imshow("ROI Selection", frame);
           waitKey(0);
@@ -339,14 +342,14 @@ int main(int argc, char** argv) try
 			break;
 		}
 		//resizesconverts to grayscale
-    if (func == 1 || func == 2)
+    if (func == 1 || func == 2 || func == 3)
     {
       //resize(frame, frame, Size(), RES_SCALE, RES_SCALE, INTER_CUBIC);
 
       cvtColor(frame, nextFrame, CV_BGR2GRAY);
     }
 
-		if (func == 0 || func == 1 || func == 2)
+		if (func == 0 || func == 1 || func == 2 || func == 3)
     {
 			//calculates optical flow using Lucas-Kanade
       if(func == 0)
@@ -439,7 +442,7 @@ int main(int argc, char** argv) try
           }
 
           //Calculates distance in mm
-          travPts[i] = (ultraScale*hypot(oriDistVec[i].x, oriDistVec[i].y)/actualFrameHeight);
+          travPts[i] = (ultraScale*hypot((4/3)*oriDistVec[i].x, oriDistVec[i].y)/actualFrameHeight);
 
           //Calculates traveled space
           travRes[i] = travPts[i] + travRes[i];
@@ -448,18 +451,18 @@ int main(int argc, char** argv) try
           //Calculates displacement
           oriDispVec = (points[points.size()-1]-points[0]);
 
-          displacement[i] = ultraScale*hypot(oriDispVec.x, oriDispVec.y)/actualFrameHeight;
+          displacement[i] = ultraScale*hypot((4/3)*oriDispVec.x, oriDispVec.y)/actualFrameHeight;
 
           stringstream ss_i, ss_displacement, ss_travRes;
           ss_i << i;
-          ss_displacement << trunc(displacement[i]*1000)/1000;
-          ss_travRes << trunc(travRes[i]*1000)/1000;
+          ss_displacement << trunc(displacement[i]*10)/10;
+          ss_travRes << trunc(travRes[i]*10)/10;
 
           putText(frame, ss_i.str(), Point(points[0].x, points[0].y+20), FONT_HERSHEY_PLAIN, 1, color[8], 1);
         }
       }
       //ROI tracking
-      else if(func == 2){
+      if(func == 2){
         drawCompass(frame);
         for(unsigned int k = 0; k < actualPts.size(); k++){
             pointsHistory[k].push_back(actualPts[k]);
@@ -488,15 +491,15 @@ int main(int argc, char** argv) try
         oriDistVec = massCenterNew - massCenter;
 
         //Calculate traveled space
-        travSpace += (ultraScale*hypot(oriDistVec.x, oriDistVec.y)/actualFrameHeight);
+        travSpace += (ultraScale*hypot((4/3)*oriDistVec.x, oriDistVec.y)/actualFrameHeight);
 
         //Calculate displacement
         oriDispVec = massCenterNew - massCenterInit;
-        dispSpace = (ultraScale*hypot(oriDispVec.x, oriDispVec.y)/actualFrameHeight);
+        dispSpace = (ultraScale*hypot((4/3)*oriDispVec.x, oriDispVec.y)/actualFrameHeight);
 
         stringstream ss_dispSpace, ss_travSpace;
-        ss_dispSpace << trunc(dispSpace*1000)/1000;
-        ss_travSpace << trunc(travSpace*1000)/1000;
+        ss_dispSpace << trunc(dispSpace*10)/10;
+        ss_travSpace << trunc(travSpace*10)/10;
 
         putText(frame, "Displacement: " + ss_dispSpace.str() + " mm", Point(20, 420), FONT_HERSHEY_PLAIN, 1, color[8]);
         putText(frame, "Traveled Space: " + ss_travSpace.str() + " mm", Point(300, 420), FONT_HERSHEY_PLAIN, 1, color[8]);
@@ -516,10 +519,10 @@ int main(int argc, char** argv) try
         shapeW = shapeW*ultraScale/actualFrameHeight;
 
         stringstream ss_initShapeH, ss_initShapeW, ss_shapeH, ss_shapeW;
-        ss_initShapeH << trunc(initShapeH*1000)/1000;
-        ss_initShapeW << trunc(initShapeW*1000)/1000;
-        ss_shapeH << trunc(shapeH*1000)/1000;
-        ss_shapeW << trunc(shapeW*1000)/1000;
+        ss_initShapeH << trunc(initShapeH*10)/10;
+        ss_initShapeW << trunc(initShapeW*10)/10;
+        ss_shapeH << trunc(shapeH*10)/10;
+        ss_shapeW << trunc(shapeW*10)/10;
 
         putText(frame, "Init height: " + ss_initShapeH.str() + " mm", Point(20, 440), FONT_HERSHEY_PLAIN, 1, color[8]);
         putText(frame, "Init width: " + ss_initShapeW.str() + " mm", Point(20, 460), FONT_HERSHEY_PLAIN, 1, color[8]);
@@ -532,6 +535,9 @@ int main(int argc, char** argv) try
         oriVec.clear();
         oriVec.push_back(oriDistVec);
         //cout << "oriVec: " << oriVec << endl;
+      }
+      else if(func == 3){
+
       }
       frameCnt++;
     }
@@ -744,7 +750,7 @@ Mat getHist(const vector<Point2f>& vec) {
 	for (unsigned int i = 0; i < vec.size(); i++) {
     int ori = VecOrientation(vec[i]);
     //Calculates euclidian distance of orientation vector
-    vecDist[ori] = ultraScale * hypot(vec[i].x, vec[i].y) / (actualFrameHeight*vec.size());
+    vecDist[ori] = ultraScale * hypot((4/3)*vec[i].x, vec[i].y) / (actualFrameHeight*vec.size());
 
     //calculates frequency of orientations
 		freq[ori] += vecDist[ori];
@@ -779,7 +785,7 @@ Mat getHist(const vector<Point2f>& vec) {
 
 		//displays bin value
 		stringstream ss;
-		ss << trunc(freq[i]*1000)/1000;
+		ss << trunc(freq[i]*10)/10;
 		string str = ss.str();
 
 		if (binsz <= histH - 15) {
@@ -856,8 +862,8 @@ void getTable(Mat& tableImg, int rows, int cols, vector <float> displacement, ve
 
       stringstream ss_i, ss_displacement, ss_travRes;
       ss_i << i-1;
-      ss_displacement << trunc(displacement[i-1]*1000)/1000;
-      ss_travRes << trunc(travRes[i-1]*1000)/1000;
+      ss_displacement << trunc(displacement[i-1]*10)/10;
+      ss_travRes << trunc(travRes[i-1]*10)/10;
 
       //Index of point
       putText(tableImg, ss_i.str(), Point(((tableW/cols)/2), heightStep + (tableH/rows)*i), FONT_HERSHEY_PLAIN, 1, color[8]);

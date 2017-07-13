@@ -1,0 +1,38 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/ppconde/Documents/GIT/Neuromuscular-Tracking-with-Ultrasound/Thesis/src/Thesis.cpp
+iostream
+-
+string
+-
+sstream
+-
+opencv2/opencv.hpp
+-
+opencv2/core/core.hpp
+-
+opencv2/highgui/highgui.hpp
+-
+opencv2/imgproc.hpp
+/home/ppconde/Documents/GIT/Neuromuscular-Tracking-with-Ultrasound/Thesis/src/opencv2/imgproc.hpp
+opencv2/imgproc/imgproc.hpp
+/home/ppconde/Documents/GIT/Neuromuscular-Tracking-with-Ultrasound/Thesis/src/opencv2/imgproc/imgproc.hpp
+vector
+-
+boost/python/module.hpp
+-
+boost/python/def.hpp
+-
+morphsnakes.py
+/home/ppconde/Documents/GIT/Neuromuscular-Tracking-with-Ultrasound/Thesis/src/morphsnakes.py
+Python.h
+-
+
+/home/ppconde/Documents/GIT/Neuromuscular-Tracking-with-Ultrasound/Thesis/src/morphsnakes.py
+

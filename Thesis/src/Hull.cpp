@@ -1,54 +1,61 @@
-#include "opencv2/imgproc/imgproc.hpp"
-#include "opencv2/highgui/highgui.hpp"
-#include <fstream>
+#include "opencv2/imgcodecs.hpp"
+#include "opencv2/highgui.hpp"
+#include "opencv2/imgproc.hpp"
 #include <iostream>
 using namespace cv;
 using namespace std;
-static void help()
-{
-    cout << "\nThis sample program demonstrates the use of the convexHull() function\n"
-         << "Call:\n"
-         << "./convexhull\n" << endl;
-}
+Mat src; Mat src_gray;
+int thresh = 100;
+int max_thresh = 255;
+RNG rng(12345);
+void thresh_callback(int, void* );
 int main( int argc, char** argv )
 {
-    CommandLineParser parser(argc, argv, "{help h||}");
-    if (parser.has("help"))
-    {
-        help();
-        return 0;
+  char file[20];
+  //video file selection
+  if (argc == 2) sprintf(file, "%s", argv[1]);
+  VideoCapture cap;
+  cap.open(file);
+
+  //check if success
+  if (!cap.isOpened()) {
+    cout << "Error: video file could not be loaded. Aborting." << endl << endl;
+    return -1;
+  }
+  for(;;){
+    cap >> src;
+    if(!src.data) {
+      cout << "Error: no video data found." << endl << endl;
+      break;
     }
-    Mat img(500, 500, CV_8UC3);
-    RNG& rng = theRNG();
-    for(;;)
-    {
-        char key;
-        int i, count = (unsigned)rng%100 + 1;
-        vector<Point> points;
-        for( i = 0; i < count; i++ )
-        {
-            Point pt;
-            pt.x = rng.uniform(img.cols/4, img.cols*3/4);
-            pt.y = rng.uniform(img.rows/4, img.rows*3/4);
-            points.push_back(pt);
-        }
-        vector<int> hull;
-        convexHull(Mat(points), hull, true);
-        img = Scalar::all(0);
-        for( i = 0; i < count; i++ )
-            circle(img, points[i], 3, Scalar(0, 0, 255), FILLED, LINE_AA);
-        int hullcount = (int)hull.size();
-        Point pt0 = points[hull[hullcount-1]];
-        for( i = 0; i < hullcount; i++ )
-        {
-            Point pt = points[hull[i]];
-            line(img, pt0, pt, Scalar(0, 255, 0), 1,LINE_AA);
-            pt0 = pt;
-        }
-        imshow("hull", img);
-        key = (char)waitKey();
-        if( key == 27 || key == 'q' || key == 'Q' ) // 'ESC'
-            break;
-    }
-    return 0;
+    cvtColor( src, src_gray, COLOR_BGR2GRAY );
+    blur( src_gray, src_gray, Size(3,3) );
+    const char* source_window = "Source";
+    namedWindow( source_window, WINDOW_AUTOSIZE );
+    imshow( source_window, src );
+    createTrackbar( " Threshold:", "Source", &thresh, max_thresh, thresh_callback );
+    thresh_callback( 0, 0 );
+    waitKey(0);
+  }
+  return(0);
+}
+void thresh_callback(int, void* )
+{
+  Mat threshold_output;
+  vector<vector<Point> > contours;
+  vector<Vec4i> hierarchy;
+  threshold( src_gray, threshold_output, thresh, 255, THRESH_BINARY );
+  findContours( threshold_output, contours, hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE, Point(0, 0) );
+  vector<vector<Point> >hull( contours.size() );
+  for( size_t i = 0; i < contours.size(); i++ )
+     {   convexHull( Mat(contours[i]), hull[i], false ); }
+  Mat drawing = Mat::zeros( threshold_output.size(), CV_8UC3 );
+  for( size_t i = 0; i< contours.size(); i++ )
+     {
+       Scalar color = Scalar( rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255) );
+       drawContours( drawing, contours, (int)i, color, 1, 8, vector<Vec4i>(), 0, Point() );
+       drawContours( drawing, hull, (int)i, color, 1, 8, vector<Vec4i>(), 0, Point() );
+     }
+  namedWindow( "Hull demo", WINDOW_AUTOSIZE );
+  imshow( "Hull demo", drawing );
 }
