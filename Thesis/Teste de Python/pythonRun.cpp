@@ -5,10 +5,12 @@
 #include "opencv2/imgproc.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include <vector>
+#include <boost/array.hpp>
 
 //namespace declaration
 using namespace std;
 using namespace cv;
+using namespace boost;
 
 #include <python2.7/Python.h>
 #include <string>
@@ -29,7 +31,6 @@ int main(){
     morphsnakes = PyImport_ImportModule("morphsnakes");
 
     //Mat src = imread("./testimages/mama07ORI.bmp");
-
 
     //Exec python script
     PyRun_SimpleString("exec(open('cpptest.py').read())");

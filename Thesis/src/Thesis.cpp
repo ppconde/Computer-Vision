@@ -11,7 +11,7 @@
 /*											 */
 /*===========================================*/
 
-#include <Python.h>
+#include <python2.7/Python.h>
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -537,7 +537,36 @@ int main(int argc, char** argv) try
         //cout << "oriVec: " << oriVec << endl;
       }
       else if(func == 3){
+        int smoothing = 1, lambda1 = 1, lambda2 = 2;
+        char *p = (char*)"myPythonProgram";
+        PyObject *snakesMod, *numpyMod, *numpyRef, *snakesRef, *numpyClass, *MorphACWEClass, *MorphACWEInstance;
 
+        //Py_SetProgramName(p);
+        Py_Initialize();
+        //Init import modules
+        _PyImport_Init();
+        //Add current path to sys.path
+        PyRun_SimpleString("import sys\n" "sys.path.append('.')\n");
+        //Load the module objects
+        numpyMod = PyImport_ImportModule("numpy");
+        snakesMod = PyImport_ImportModule("morphsnakes");
+        //Build borrowed references
+        numpyRef = PyModule_GetDict(numpyMod);
+        snakesRef = PyModule_GetDict(snakesMod);
+        //Build the name of callable class
+        MorphACWEClass = PyDict_GetItemString(snakesRef, "MorphACWE");
+        //Create an instance of a class
+        if(PyCallable_Check(MorphACWEClass)){
+          MorphACWEInstance = PyObject_CallObject(MorphACWEClass, NULL);
+        }
+        else{
+          cout << "Cannot instantiate the Python class" << endl;
+        }
+
+        PyObject_CallMethod(MorphACWEInstance, "MorphACWE", "(nextFrame)", smoothing, lambda1, lambda2);
+
+        _PyImport_Fini();
+        Py_Finalize();
       }
       frameCnt++;
     }
