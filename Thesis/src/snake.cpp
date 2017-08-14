@@ -1,120 +1,211 @@
-#include <iostream>
-#include <string>
-#include <sstream>
-#include <opencv2/opencv.hpp>
+// Snakes (active contours) implemented with OpenCV.
+//
+// Author: Alessandro Gentilini - 2014
+//
+// Following the Bayesian approach described in "17.2 Snakes" of:
+//
+// Prince, S.J.D.
+// [*Computer Vision: Models Learning and Inference*](http://web4.cs.ucl.ac.uk/staff/s.prince/book/book.pdf),
+// Cambridge University Press, 2012
+
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include "opencv2/imgproc.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
-#include <vector>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <iostream>
+#include <cmath>
+#include <string>
 
-//namespace declaration
-using namespace std;
-using namespace cv;
+std::string getImgType(int imgTypeInt)
+{
+    int numImgTypes = 35; // 7 base types, with five channel options each (none or C1, ..., C4)
 
-#define bitdepth CV_32F
+    int enum_ints[] =       {CV_8U,  CV_8UC1,  CV_8UC2,  CV_8UC3,  CV_8UC4,
+                             CV_8S,  CV_8SC1,  CV_8SC2,  CV_8SC3,  CV_8SC4,
+                             CV_16U, CV_16UC1, CV_16UC2, CV_16UC3, CV_16UC4,
+                             CV_16S, CV_16SC1, CV_16SC2, CV_16SC3, CV_16SC4,
+                             CV_32S, CV_32SC1, CV_32SC2, CV_32SC3, CV_32SC4,
+                             CV_32F, CV_32FC1, CV_32FC2, CV_32FC3, CV_32FC4,
+                             CV_64F, CV_64FC1, CV_64FC2, CV_64FC3, CV_64FC4};
 
-Mat frame, snakeFrame;
-char file[20];
-const float wl_max = 1.0, we_max = 1.0, wt_max = 1.0;
-float wl = 0.5, we = 0.3, wt = 0.5;
-//char TrackBarwl[50], TrackBarwe[50], TrackBarwt[50];
+    std::string enum_strings[] = {"CV_8U",  "CV_8UC1",  "CV_8UC2",  "CV_8UC3",  "CV_8UC4",
+                             "CV_8S",  "CV_8SC1",  "CV_8SC2",  "CV_8SC3",  "CV_8SC4",
+                             "CV_16U", "CV_16UC1", "CV_16UC2", "CV_16UC3", "CV_16UC4",
+                             "CV_16S", "CV_16SC1", "CV_16SC2", "CV_16SC3", "CV_16SC4",
+                             "CV_32S", "CV_32SC1", "CV_32SC2", "CV_32SC3", "CV_32SC4",
+                             "CV_32F", "CV_32FC1", "CV_32FC2", "CV_32FC3", "CV_32FC4",
+                             "CV_64F", "CV_64FC1", "CV_64FC2", "CV_64FC3", "CV_64FC4"};
 
-Mat config_eext(float wl, float we, float wt, Mat image);
-//static void on_TrackBar( int, void* );
-
-int main(int argc, char** argv){
-
-  //video file selection
-  if (argc == 2) sprintf(file, "%s", argv[1]);
-
-  VideoCapture cap;
-
-	cap.open(file);
-
-  //check if success
-	if (!cap.isOpened()) {
-		cout << "Error: video file could not be loaded. Aborting." << endl << endl;
-		return -1;
-	}
-
-   for(;;){
-     cap >> frame;		//gets new frame
-     if(!frame.data) {
-       cout << "Error: no video data found." << endl << endl;
-       break;
-     }
-     snakeFrame = config_eext(wl, we, wt, frame);
-     imshow("frame", frame);
-     imshow("snakeFrame", snakeFrame);
-
-     char key = waitKey(33);
-
-     //if "space" pressed, pauses
- 	    if (key == 32) {
- 	    	key = 0;
-
-        while (key != 32) {
- 	    		key = waitKey(5);
-
-          if(key == 27)  break;
-        }
-      }
+    for(int i=0; i<numImgTypes; i++)
+    {
+        if(imgTypeInt == enum_ints[i]) return enum_strings[i];
     }
-   return 0;
+    return "unknown image type";
 }
 
-Mat config_eext(float wl, float we, float wt, Mat image)
+typedef std::vector<cv::Point2d> W_t;
+typedef float distance_t;
+
+template< typename T >
+struct CPP_TYPE_TO_OPENCV_IMG_TYPE
 {
-  Mat eline, gradx, grady, img_gray, eedge;
+    CPP_TYPE_TO_OPENCV_IMG_TYPE() { assert(32==8*sizeof(distance_t)); }
+};
+template<> struct CPP_TYPE_TO_OPENCV_IMG_TYPE<distance_t> { enum { type = CV_32FC1 }; };
 
-  //bitdepth defined as CV_32F
-  image.convertTo(img_gray, bitdepth);
 
-  //Convolution Kernels
-  Mat m1, m2, m3, m4, m5;
-  m1 = (Mat_<float>(1, 2) << 1, -1);
-  m2 = (Mat_<float>(2, 1) << 1, -1);
-  m3 = (Mat_<float>(1, 3) << 1, -2, 1);
-  m4 = (Mat_<float>(3, 1) << 1, -2, 1);
-  m5 = (Mat_<float>(2, 2) << 1, -1, -1, 1);
+double distance_from_edge( const cv::Mat& distance_img, const W_t::value_type& w)
+{
+    if ( w.y >= distance_img.rows || w.x >= distance_img.cols ) {
+        double minVal;
+        double maxVal;
+        cv::Point minLoc;
+        cv::Point maxLoc;
+        cv::minMaxLoc( distance_img, &minVal, &maxVal, &minLoc, &maxLoc );
+        std::cout << "rotto!!!";
+        return (pow(w.y,2)+pow(w.x,2))*maxVal;
+    }
+    return distance_img.at<distance_t>(w.y,w.x);
+}
 
-  img_gray.copyTo(eline);
+double vector_norm2(const W_t::value_type& p)
+{
+    return sqrt(pow(p.x,2) + pow(p.y,2));
+}
 
-  //Kernels de gradiente
-  Mat kernelx = (Mat_<float>(1, 3) << -1, 0, 1);
-  Mat kernely = (Mat_<float>(3, 1) << -1, 0, 1);
+// Formula 17.5
+double space(const W_t& W, const size_t& N, const size_t& n)
+{
+    double consecutive_distance_average = 0;
+    for( size_t i = 1; i<= N; i++ ) {
+        consecutive_distance_average += vector_norm2(W[i]-W[i-1]);
+    }
+    consecutive_distance_average /= N;
+    double result = -pow(consecutive_distance_average-vector_norm2(W[n]-W[n-1]),2);
+    std::cout << "space\t" << result << "\n";
+    return result;
+}
 
-  //Gradiente em x e em y
-  filter2D(img_gray, gradx, -1, kernelx);
-  filter2D(img_gray, grady, -1, kernely);
+// Formula 17.6
+double curve(const W_t& W, const size_t& n)
+{
+    double result = -pow(vector_norm2(W[n-1]-2*W[n]+W[n+1]),2);
+    std::cout << "curve\t" << result << "\n";
+    return result;
+}
 
-  //Edge Energy como definido por Kass
-  eedge = -1 * (gradx.mul(gradx) + grady.mul(grady));
+// Formula 17.4
+double prior(const W_t& W, const size_t& N, const double& alpha, const double& beta)
+{
+    double result = 1;
+    for ( size_t n = 1; n <= N; n++ ) {
+        result *= exp(alpha*space(W,N,n)+beta*curve(W,n));
+    }
+    std::cout << "prior\t" << result << "\n";
+    return result;
+}
 
-  //Termination Energy Convolution
-  Mat cx, cy, cxx, cyy, cxy, eterm(img_gray.rows, img_gray.cols, bitdepth), cxm1, den, cxcx, cxcxm1, cxcxcy, cxcycxy, cycycxx;
-  filter2D(img_gray, cx, bitdepth, m1);
-  filter2D(img_gray, cy, bitdepth, m2);
-  filter2D(img_gray, cxx, bitdepth, m3);
-  filter2D(img_gray, cyy, bitdepth, m4);
-  filter2D(img_gray, cxy, bitdepth, m5);
+// Formula 17.3
+double likelihood(const cv::Mat& distance_img, const W_t& W, const size_t& N)
+{
+    double result = 1;
+    for ( size_t n = 1; n <= N; n++ ) {
+        double d = distance_from_edge(distance_img,W[n]);
+        result *= exp(-pow(d,2));;
+        std::cout << "likelihood d\t" << d << "\t" << -pow(d,2) << "\n";
+    }
+    return result;
+}
 
-  //element wise operations to find Eterm
-  cxcx = cx.mul(cx);
-  cxcx.convertTo(cxcxm1, -1, 1, 1);
-  den = cxcxm1 + cy.mul(cy);
-  cv::pow(den, 1.5, den);
-  cxcxcy = cxcx.mul(cy);
-  cxcycxy = cx.mul(cy);
-  cxcycxy = cxcycxy.mul(cxy);
-  cycycxx = cy.mul(cy);
-  cycycxx = cycycxx.mul(cxx);
-  eterm = (cxcxcy - 2 * cxcycxy + cycycxx);
-  cv::divide(eterm, den, eterm, -1);
+// Formula 17.7
+double cost(const W_t& W, const cv::Mat& distance_img, const size_t& N,const double& alpha, const double& beta)
+{
+    return log(likelihood(distance_img,W,N)) + log(prior(W,N,alpha,beta));
+}
 
-  //Image energy
-  Mat eext;
-  eext = wl*eline + we*eedge + wt*eterm;
-  return eext;
+int main( int argc, char** argv )
+{
+    if( argc != 2)
+    {
+     std::cout <<" Usage: display_image ImageToLoadAndDisplay" << "\n";
+     return -1;
+    }
+
+    cv::Mat image;
+    image = cv::imread(argv[1], CV_LOAD_IMAGE_GRAYSCALE);
+
+    if(! image.data )
+    {
+        std::cout <<  "Could not open or find the image" << "\n";
+        return -1;
+    }
+
+    //cv::namedWindow( "image", cv::WINDOW_AUTOSIZE );
+    cv::namedWindow( "image" );
+    cv::imshow( "image", image );
+
+    cv::Mat edges;
+    cv::Canny(image,edges,50,200);
+    edges = 255-edges;
+
+    cv::namedWindow( "edges", cv::WINDOW_AUTOSIZE );
+    cv::imshow( "edges", edges );
+
+    cv::Mat distance(edges.rows,edges.cols,CPP_TYPE_TO_OPENCV_IMG_TYPE<distance_t>::type);
+
+    cv::distanceTransform(edges,distance, CV_DIST_L2, CV_DIST_MASK_PRECISE);
+    std::ostringstream oss;
+    oss << distance;
+    std::cout << getImgType(distance.type()) << oss.str().substr(0,70) << "\n";
+
+    cv::Mat normalized_dist;
+    cv::normalize(distance.clone(), normalized_dist, 0.0, 1.0, cv::NORM_MINMAX);
+
+    cv::namedWindow( "distance", cv::WINDOW_AUTOSIZE );
+    cv::imshow( "distance", normalized_dist );
+
+
+    std::vector<cv::Vec3f> circles;
+    cv::HoughCircles( edges, circles, CV_HOUGH_GRADIENT, 1, 10, 200, 25, 0, 0 );
+
+    //std::cout << circles.size() << "\n";
+
+    //for( size_t i = 0; i < circles.size(); i++ )
+    cv::Mat hough = image.clone();
+    // for( size_t i = 0; i < 1; i++ )
+    // {
+    //    Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
+    //    int radius = cvRound(circles[i][2]);
+    //    circle( hough, center, 3, Scalar(255,255,255));
+    //    circle( hough, center, radius, Scalar(255,255,255));
+    // }
+
+
+    const size_t selected_circle = 1;
+    cv::Point2d w_center(circles[selected_circle][0],circles[selected_circle][1]);
+    double radius = circles[selected_circle][2];
+    const size_t N = 30;
+    W_t W(N+2);
+    for ( size_t i = 1; i <= N; i++ ) {
+        const double a = i*2*M_PI/N;
+        W[i].x = w_center.x + radius*cos(a);
+        W[i].y = w_center.y + radius*sin(a);
+    }
+    W[0] = W[N];
+    W[N+1] = W[1];
+
+    for ( size_t i = 1; i <= N; i++ ) {
+        circle( hough, W[i], 3, cv::Scalar(255,255,255));
+    }
+
+    cv::namedWindow( "circles", cv::WINDOW_AUTOSIZE );
+    cv::imshow( "circles", hough );
+
+    double alpha = 0.5;
+    double beta = 0.5;
+    //std::cout << "prior\t" << prior(W,N,alpha,beta) << "\n";
+    //std::cout << "likelihood\t" << likelihood(distance,W,N) << "\n";
+    //std::cout << "cost\t" << cost(W,distance,N,alpha,beta) << "\n";
+
+    cv::waitKey(0);
+    return 0;
 }

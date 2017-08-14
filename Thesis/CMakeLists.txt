@@ -3,6 +3,18 @@ project(ProjectName)
 message("\n==> Finding 3rd Party Packages")
 find_package(OpenCV REQUIRED)
 find_package(PythonLibs 2.7 REQUIRED)
+find_package(PythonLibs)
+find_package(PythonInterp)
+if (${PYTHON_VERSION_MAJOR} EQUAL 3)
+    FIND_PACKAGE(Boost COMPONENTS python3)
+else()
+    FIND_PACKAGE(Boost COMPONENTS python)
+endif()
+enable_testing()
+
+INCLUDE_DIRECTORIES(${OpenCV_INCLUDE_DIR} ${Boost_INCLUDE_DIRS} ${PYTHON2_INCLUDE_DIR})
+LINK_LIBRARIES(${Boost_LIBRARIES} ${PYTHON_LIBRARIES}) # Deprecated but so convenient!
+
 message(STATUS "PYTHON_LIBRARIES = ${PYTHON_LIBRARIES}")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -W")
 set(CMAKE_C_FLAGS_RELEASE "-O3")
@@ -13,6 +25,6 @@ set(CMAKE_CXX_FLAGS_DEBUG "-g3")
 set(BASE_DIR ${CMAKE_SOURCE_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${BASE_DIR}/bin)
 
-include_directories(${OpenCV_INCLUDE_DIR} ${PYTHON2_INCLUDE_DIR} ${PYTHON_LIBRARIES})
+#include_directories(${OpenCV_INCLUDE_DIR} ${PYTHON2_INCLUDE_DIR} ${PYTHON_LIBRARIES})
 add_subdirectory( src )
 

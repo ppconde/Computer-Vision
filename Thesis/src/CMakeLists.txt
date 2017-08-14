@@ -1,11 +1,15 @@
+PYTHON_ADD_MODULE(mor
 add_executable(Thesis Thesis.cpp)
 target_link_libraries(Thesis ${PYTHON_LIBRARIES} ${PYTHON2_INCLUDE_DIRS} ${OpenCV_LIBS} ${PCL_LIBRARIES})
-
+#
+add_executable(interpreter interpreter.cpp)
+target_link_libraries(interpreter ${PYTHON_LIBRARIES} ${PYTHON2_INCLUDE_DIRS} ${OpenCV_LIBS} ${PCL_LIBRARIES})
+#
 #add_executable(blob blob.cpp)
 #target_link_libraries(blob ${OpenCV_LIBS} ${PCL_LIBRARIES})
 #
-#add_executable(snake snake.cpp)
-#target_link_libraries(snake ${OpenCV_LIBS} ${PCL_LIBRARIES})
+add_executable(snake snake.cpp)
+target_link_libraries(snake ${OpenCV_LIBS} ${PCL_LIBRARIES})
 #
 
 #add_executable(Mouse Mouse.cpp)
