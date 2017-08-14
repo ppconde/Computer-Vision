@@ -144,7 +144,7 @@ int main( int argc, char** argv )
     cv::imshow( "image", image );
 
     cv::Mat edges;
-    cv::Canny(image,edges,50,200);
+    //cv::Canny(image,edges,50,200);
     edges = 255-edges;
 
     cv::namedWindow( "edges", cv::WINDOW_AUTOSIZE );
