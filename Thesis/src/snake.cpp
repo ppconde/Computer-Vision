@@ -200,8 +200,6 @@ int main( int argc, char** argv )
     cv::namedWindow( "circles", cv::WINDOW_AUTOSIZE );
     cv::imshow( "circles", hough );
 
-    double alpha = 0.5;
-    double beta = 0.5;
     //std::cout << "prior\t" << prior(W,N,alpha,beta) << "\n";
     //std::cout << "likelihood\t" << likelihood(distance,W,N) << "\n";
     //std::cout << "cost\t" << cost(W,distance,N,alpha,beta) << "\n";

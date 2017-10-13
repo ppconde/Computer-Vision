@@ -11,7 +11,6 @@
 /*											 */
 /*===========================================*/
 
-#include <python2.7/Python.h>
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -546,62 +545,6 @@ int main(int argc, char** argv) try
         for(unsigned int k = 0; k < actualPts.size(); k++){
             pointsHistory[k].push_back(actualPts[k]);
         }
-        cout << "teste" << endl;
-
-
-
-        int smoothing = 1, lambda1 = 1, lambda2 = 2;
-        char *p = (char*)"myPythonProgram";
-        cout << "Teste 2" << endl;
-
-        PyObject *numpyName, *morphName, *snakesMod, *numpyMod, *numpyRef, *snakesRef, *numpyClass, *MorphACWEClass, *MorphACWEInstance;
-
-        //Py_SetProgramName(p);
-        Py_Initialize();
-        cout << "teste 3" << endl;
-        //Init import modules
-
-        cout << "teste 4" << endl;
-
-        //Add current path to sys.path
-        //PyRun_SimpleString("import sys\n" "sys.path.append('.')\n");
-
-        cout << "test 5" << endl;
-
-        //numpyName = PyString_FromString("MorphACWE");
-        morphName = PyString_FromString("morphsnakes");
-
-        //Load the module objects
-        //numpyMod = PyImport_Import(numpyName);
-        snakesMod = PyImport_Import(morphName);
-
-        cout << "test 6" << endl;
-        //Build borrowed references
-        //numpyRef = PyModule_GetDict(numpyMod);
-        cout << "test 6.5" << endl;
-        snakesRef = PyModule_GetDict(snakesMod);
-
-        cout << "test 7" << endl;
-        //Build the name of callable class
-        //MorphACWEClass = PyDict_GetItemString(snakesRef, "MorphACWE");
-        MorphACWEClass = PyDict_GetItemString(snakesRef, "MorphGAC");
-        cout << "test 8" << endl;
-        //Create an instance of a class
-        if(PyCallable_Check(MorphACWEClass)){
-          MorphACWEInstance = PyObject_CallObject(MorphACWEClass, NULL);
-          cout << "test 8.1" << endl;
-        }
-        else{
-          cout << "Cannot instantiate the Python class" << endl;
-        }
-
-        PyObject_CallMethod(MorphACWEInstance, "MorphACWE", "(nextFrame)", smoothing, lambda1, lambda2);
-        cout << "test 9" << endl;
-        _PyImport_Fini();
-        cout << "test 10" << endl;
-        Py_Finalize();
-
-        cout << "final test" << endl;
 
       }
       frameCnt++;
