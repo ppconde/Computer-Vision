@@ -98,7 +98,7 @@ int pnpoly(int nvert, vector<Point2f> roiPts, Point2f prevPt);
 Point2f getMC(vector <Point2f> points);
 
 //main routine
-int main(int argc, char** argv) try
+int main(int argc, char** argv)
 {
   //C++
 
@@ -107,9 +107,7 @@ int main(int argc, char** argv) try
 	bool hist = HIST_INIT;				//histogram visualization
   bool table = TABLE_INIT;      //Table visualization
 	char file[20];
-	char auxch[50];
 	int linesz;							//line thickness
-	bool drmed = 0;
   float initShapeH = 0.0, initShapeW = 0.0, shapeH = 0.0, shapeW = 0.0; //Shape width and height information
 
 	//matrixes declaration
@@ -185,14 +183,14 @@ int main(int argc, char** argv) try
 
 	//analysis method selection
 	cout << endl << " Choose analysis method:" <<endl;
-  cout << "   0 = ROI Tracking (L-K)"<< endl;
-  cout << "   1 = Point Tracking (L-K)" << endl;
-  cout << "   2 = ROI Point Tracking (L-K)]" << endl;
+  cout << "   0 = ROI Tracking"<< endl;
+  cout << "   1 = Point-wise Tracking" << endl;
+  cout << "   2 = Contour Tracking" << endl;
   cout << "   3 = Active Shape Modeling (ASM) " << endl;
 	cin >> func;
 
 	//properties for each program function
-	if (func == 0) {
+	if (func == 0 || func == 2 ) {
 		linesz = 1;
 
 		cout << endl
@@ -200,7 +198,7 @@ int main(int argc, char** argv) try
     			 << " Press ENTER when the selection is made." << endl;
 
 	}
-	else if (func == 1 || func == 2 || func == 3) {
+	else if (func == 1 || func == 3) {
 		linesz = 1;
 
 		cout << endl
@@ -221,109 +219,85 @@ int main(int argc, char** argv) try
 				break;
 			}
 
-			//resizes video frames for viewing purposes
-			//resize(frame, frame, Size(), RES_SCALE, RES_SCALE, INTER_CUBIC);
-
 			//converts frame to grayscale
 			cvtColor(frame, nextFrame, CV_BGR2GRAY);
 
-			if (func == 0 || func == 1 || func == 2 || func == 3){
-				//images for selection
-				roiFrame = frame.clone();
-        medianBlur(roiFrame, roiFrame, 5);
+			//images for selection
+			roiFrame = frame.clone();
+      medianBlur(roiFrame, roiFrame, 5);
 
-				roiAux = frame.clone();
-        auxBlackFrame = Mat::zeros(frame.size(), CV_8UC1);
+			roiAux = frame.clone();
+      auxBlackFrame = Mat::zeros(frame.size(), CV_8UC1);
 
-        //imshow("roiFrame", roiFrame);
+      Mat binaryFrame(nextFrame.size(), CV_8UC1);
+      threshold(nextFrame, binaryFrame, 50, 255, THRESH_BINARY);
 
-        Mat binaryFrame(nextFrame.size(), CV_8UC1);
-        threshold(nextFrame, binaryFrame, 50, 255, THRESH_BINARY);
-
-        //Measure actual video pixel height
-         for(int i = 0; i < binaryFrame.rows ; i++){
-           //cout << binaryFrame.at<uchar>(i, binaryFrame.cols-5) << endl;
-           if((uchar)binaryFrame.at<uchar>(i, binaryFrame.cols-5) != 0){
-             frameHeightTop = i;  //AZUL
-             break;
-           }
+      //Measure actual video pixel height
+       for(int i = 0; i < binaryFrame.rows ; i++){
+         //cout << binaryFrame.at<uchar>(i, binaryFrame.cols-5) << endl;
+         if((uchar)binaryFrame.at<uchar>(i, binaryFrame.cols-5) != 0){
+           frameHeightTop = i;
+           break;
          }
+       }
 
-         for(int i = binaryFrame.rows; i > 0 ; i--){
-           //cout << binaryFrame.at<uchar>(i, binaryFrame.cols-5) << endl;
-           if((uchar)binaryFrame.at<uchar>(i, binaryFrame.cols-5) != 0){
-             frameHeightBot = i;  //VERMELHO
-             break;
-           }
+       for(int i = binaryFrame.rows; i > 0 ; i--){
+         //cout << binaryFrame.at<uchar>(i, binaryFrame.cols-5) << endl;
+         if((uchar)binaryFrame.at<uchar>(i, binaryFrame.cols-5) != 0){
+           frameHeightBot = i;
+           break;
          }
+       }
 
-         actualFrameHeight = frameHeightBot - frameHeightTop;
+       actualFrameHeight = frameHeightBot - frameHeightTop;
 
-        circle(frame, Point(binaryFrame.cols-5, frameHeightTop), 5, color[5], 1);
-        circle(frame, Point(binaryFrame.cols-5, frameHeightBot), 5, color[1], 1);
+			//mouse callback for selecting ROI
+			imshow("ROI Selection", frame);
+			setMouseCallback("ROI Selection", roiSelection);
+      waitKey(0);
 
-        circle(binaryFrame, Point(binaryFrame.cols-5, frameHeightTop), 5, color[5], 1);
-        circle(binaryFrame, Point(binaryFrame.cols-5, frameHeightBot), 5, color[1], 1);
-
-        //cout << "actualFrameHeight: " << actualFrameHeight << endl;
-
-        //imshow("binaryFrame", binaryFrame);
-
-				//mouse callback for selecting ROI
-				imshow("ROI Selection", frame);
-				setMouseCallback("ROI Selection", roiSelection);
+      if(func == 0){
+        line(frame, roiPts[roiPts.size()-1], roiPts[0], color[4], 2, 8);
+        imshow("ROI Selection", frame);
         waitKey(0);
 
-        if(func == 0){
-          line(frame, roiPts[roiPts.size()-1], roiPts[0], color[4], 2, 8);
-          line(auxBlackFrame, roiPts[roiPts.size()-1], roiPts[0], color[4], 1, 8);
+        Mat mask = Mat::zeros(roiFrame.size(), CV_8UC1);
 
-          imshow("ROI Selection", frame);
-          waitKey(0);
-          //Create Polygon from vertices (roiPts)
-          approxPolyDP(roiPts, ROI_Poly, 1.0, true);
+        //Initializes prevPts vector
+        prevPts = nextPts;
 
-          Mat mask = Mat::zeros(roiFrame.size(), CV_8UC1);
+        //Creates black and white mask
+        roiMask = mask(roiBox);
 
-          //Initializes prevPts vector
-          prevPts = nextPts;
-
-          //Creates black and white mask
-          roiMask = mask(roiBox);
-
-          //Region of interest rectangle
-          roiBox = rectLimits(roiPts);
-
-          nextFrame = nextFrame(roiBox);
+        //Region of interest rectangle
+        roiBox = rectLimits(roiPts);
+        nextFrame = nextFrame(roiBox);
+      }
+      else if(func == 1 || func  == 2 || func == 3){
+        for(unsigned int k = 0; k < roiPts.size(); k++){
+          pointsHistory.push_back(vector<Point2f>());
         }
-
-        else if(func == 1 || func  == 2 || func == 3){
-          for(unsigned int k = 0; k < roiPts.size(); k++){
-            pointsHistory.push_back(vector<Point2f>());
+      }
+			else if (roiPts.size() >= 1){
+				if (func == 0 || func == 1 || func == 2) {
+          for(size_t i=2; i<=roiPts.size()-1; i=i+3){
+            //prepares vectors for point tracking
+            nextPts.push_back(roiPts[i]);
+            oriVec.push_back(roiPts[i]);
           }
-        }
-				else if (roiPts.size() >= 1){
-					if (func == 0 || func == 1 || func == 2) {
-            for(size_t i=2; i<=roiPts.size()-1; i=i+3){
-              //prepares vectors for point tracking
-              nextPts.push_back(roiPts[i]);
-              oriVec.push_back(roiPts[i]);
-            }
-					}
 				}
-        else if (func == 2 || func == 3){
-          line(frame, roiPts[roiPts.size()-1], roiPts[0], color[4], 1, 8);
-          imshow("ROI Selection", frame);
-          waitKey(0);
-        }
-				else {
-					cout << "Error: not enough points selected to form ROI." << endl << endl;
-					return -1;
-				}
-				//closes ROI selection window
-				destroyWindow("ROI Selection");
 			}
-			else cnt = 1;	//overrides counter
+      else if (func == 2 || func == 3){
+        line(frame, roiPts[roiPts.size()-1], roiPts[0], color[4], 1, 8);
+        imshow("ROI Selection", frame);
+        waitKey(0);
+      }
+			else {
+				cout << "Error: not enough points selected to form ROI." << endl << endl;
+				return -1;
+			}
+			//closes ROI selection window
+			destroyWindow("ROI Selection");
 		}
     if( func == 0) goodFeaturesToTrack(nextFrame, nextPts, nPts, qLevel, minDist);
 
@@ -344,21 +318,14 @@ int main(int argc, char** argv) try
 			cout << endl << " Video has ended. Tracking Stopped." << endl << endl;
 			break;
 		}
-		//resizesconverts to grayscale
-    if (func == 1 || func == 2 || func == 3)
-    {
-      //resize(frame, frame, Size(), RES_SCALE, RES_SCALE, INTER_CUBIC);
 
-      cvtColor(frame, nextFrame, CV_BGR2GRAY);
-    }
+    cvtColor(frame, nextFrame, CV_BGR2GRAY);
 
 		if (func == 0 || func == 1 || func == 2 || func == 3)
     {
 			//calculates optical flow using Lucas-Kanade
       if(func == 0)
       {
-        //resize(frame, frame, Size(), RES_SCALE, RES_SCALE, INTER_CUBIC);
-        cvtColor(frame, nextFrame, CV_BGR2GRAY);
 
         //Stores original resized frame
         auxFrame = frame.clone();
@@ -369,6 +336,7 @@ int main(int argc, char** argv) try
         //Mat or image of the roiBox
         nextFrame = nextFrame(roiBox);
 
+        //Calculates ROI Points coordinates related to the roiBox
         if(cntFirst){
             auxBlackFrame = auxBlackFrame(roiBox);
             scaledRoiPts = roiPts;
@@ -403,7 +371,6 @@ int main(int argc, char** argv) try
 
                //vector color attribution
                cidx = VecOrientation(oriVec[i]);
-               //cout << "roiPts" << roiPts[i] << endl << endl;
                line(frame, Point(x1, y1), Point(x2, y2), color[cidx], linesz);
             }
           }
@@ -423,6 +390,7 @@ int main(int argc, char** argv) try
         travRes.resize(pointsHistory.size());
         displacement.resize(pointsHistory.size());
 
+        //Calculate Optical Flow Lucas-Kanade method
         calcOpticalFlowPyrLK(prevFrame, nextFrame, actualPts, out, status, err);
         actualPts = out;
         for(unsigned int i = 0; i < pointsHistory.size(); i++){
@@ -432,10 +400,12 @@ int main(int argc, char** argv) try
             //Draws line, if it's the actual point then draws yellow line
             line(frame, points[k-1], points[k], (k == points.size() - 1) ? color[11] : color[VecOrientation(points[k]-points[k-1])], 2);
           }
+          //Initializes all the orientation vectors with (0,0)
           if(frameCnt == 0){
             for(unsigned int j = 0; j < pointsHistory.size(); j++){
               oriDistVec.push_back(Point2f(0,0));
             }
+            //Initializes all the travRes and TravPts with (pointsHistory.size(), 0)
             travRes.assign((int)pointsHistory.size(), 0);
             travPts.assign((int)pointsHistory.size(), 0);
           }
@@ -443,7 +413,6 @@ int main(int argc, char** argv) try
             //Calculates orientation for each point
               oriDistVec[i] = points[points.size()-1] - points[points.size()-2];
           }
-
           //Calculates distance in mm
           travPts[i] = (ultraScale*hypot((4/3)*oriDistVec[i].x, oriDistVec[i].y)/actualFrameHeight);
 
@@ -464,7 +433,7 @@ int main(int argc, char** argv) try
           putText(frame, ss_i.str(), Point(points[0].x, points[0].y+20), FONT_HERSHEY_PLAIN, 1, color[8], 1);
         }
       }
-      //ROI tracking
+      //Contour tracking
       if(func == 2){
         drawCompass(frame);
         for(unsigned int k = 0; k < actualPts.size(); k++){
@@ -515,6 +484,7 @@ int main(int argc, char** argv) try
           initShapeH = initShapeH*ultraScale/actualFrameHeight;
           initShapeW = initShapeW*ultraScale/actualFrameHeight;
         }
+        //Calculate shape selection height and width
         Rect shape = rectLimits(actualPts);
         shapeH = shape.height;
         shapeW = shape.width;
@@ -537,7 +507,6 @@ int main(int argc, char** argv) try
         roi_polygon(out, frame);
         oriVec.clear();
         oriVec.push_back(oriDistVec);
-        //cout << "oriVec: " << oriVec << endl;
       }
       else if(func == 3){
         waitKey(0);
@@ -545,7 +514,6 @@ int main(int argc, char** argv) try
         for(unsigned int k = 0; k < actualPts.size(); k++){
             pointsHistory[k].push_back(actualPts[k]);
         }
-
       }
       frameCnt++;
     }
@@ -579,29 +547,6 @@ int main(int argc, char** argv) try
 	    	while (key != 32) {
 	    		key = waitKey(5);
 
-	    		//shows median of all orientations
-	    		if (func == 0) {
-	    			if (!drmed) {
-	    				drmed = 1;
-
-	    				//calculates median of vectors
-		    			Scalar oriAux = sum(oriVec);
-		    			oriAux[0] = oriAux[0]/oriVec.size();
-		    			oriAux[1] = oriAux[1]/oriVec.size();
-
-		    			cidx = VecOrientation(Point(oriAux[0], oriAux[1]));
-
-		    			//displays vector
-		    			arrowedLine(auxFrame, Point(auxFrame.cols/2, auxFrame.rows/2), Point(frame.cols/2+oriAux[0]*10, frame.rows/2+oriAux[1]*10), color[cidx], 2);
-
-	    				//displays vector value
-	    				putText(auxFrame, "(x, y) =", Point(10, 25), FONT_HERSHEY_PLAIN, 1, color[8]);
-	    				sprintf(auxch, "(%.2f,", oriAux[0]);
-	    				putText(auxFrame, auxch, Point(10, 40), FONT_HERSHEY_PLAIN, 1, color[8]);
-	    				sprintf(auxch, "%.2f)", oriAux[1]);
-	    				putText(auxFrame, auxch, Point(15, 55), FONT_HERSHEY_PLAIN, 1, color[8]);
-	    			}
-	    		}
 	    		//displays frame
 	    		if (traj) imshow("Movement Tracking", frame);
 				else imshow("Movement Tracking", auxFrame);
@@ -626,9 +571,6 @@ int main(int argc, char** argv) try
 	    	}
 	    }
 
-	    //resets drmed
-	    drmed = 0;
-
 	    //if "S" pressed, toggles trajectories
 	    if (key == 's' || key == 'S') traj = !traj;
 
@@ -646,11 +588,6 @@ int main(int argc, char** argv) try
 
 	return 0;
 }
-catch(exception& e)
-{
-  cout << e.what() << endl;
-}
-
 
 static void roiSelection(int event, int x, int y, int, void*) {
 	// This function waits for user to select points that define a ROI or a point of interest
