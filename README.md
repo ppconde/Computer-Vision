@@ -1,6 +1,4 @@
-### Neuromuscular Tracking System with Ultrasound
-
-# Master Thesis
+### Computer Vision
 
 
 This repository is destined to be used in the development of the project Neuromuscular Tracking System with Ultrasound, developed in University of Aveiro, Portugal.
