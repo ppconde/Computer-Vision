@@ -187,7 +187,6 @@ int main(int argc, char** argv)
   cout << "   0 = ROI Tracking"<< endl;
   cout << "   1 = Point-wise Tracking" << endl;
   cout << "   2 = Contour Tracking" << endl;
-  cout << "   3 = Active Shape Modeling (ASM) " << endl;
 	cin >> func;
 
 	//properties for each program function
@@ -199,7 +198,7 @@ int main(int argc, char** argv)
     			 << " Press ENTER when the selection is made." << endl;
 
 	}
-	else if (func == 1 || func == 3) {
+	else if (func == 1) {
 		linesz = 1;
 
 		cout << endl
@@ -274,7 +273,7 @@ int main(int argc, char** argv)
         roiBox = rectLimits(roiPts);
         nextFrame = nextFrame(roiBox);
       }
-      else if(func == 1 || func  == 2 || func == 3){
+      else if(func == 1 || func  == 2){
         for(unsigned int k = 0; k < roiPts.size(); k++){
           pointsHistory.push_back(vector<Point2f>());
         }
@@ -288,7 +287,7 @@ int main(int argc, char** argv)
           }
 				}
 			}
-      else if (func == 2 || func == 3){
+      else if (func == 2){
         line(frame, roiPts[roiPts.size()-1], roiPts[0], color[4], 1, 8);
         imshow("ROI Selection", frame);
         waitKey(0);
@@ -322,7 +321,7 @@ int main(int argc, char** argv)
 
     cvtColor(frame, nextFrame, CV_BGR2GRAY);
 
-		if (func == 0 || func == 1 || func == 2 || func == 3)
+		if (func == 0 || func == 1 || func == 2)
     {
 			//calculates optical flow using Lucas-Kanade
       if(func == 0)
@@ -435,7 +434,7 @@ int main(int argc, char** argv)
         }
       }
       //Contour tracking
-      if(func == 2){
+      else if(func == 2){
         drawCompass(frame);
         for(unsigned int k = 0; k < actualPts.size(); k++){
             pointsHistory[k].push_back(actualPts[k]);
@@ -529,13 +528,6 @@ int main(int argc, char** argv)
         roi_polygon(out, frame);
         oriVec.clear();
         oriVec.push_back(oriDistVec);
-      }
-      else if(func == 3){
-        waitKey(0);
-
-        for(unsigned int k = 0; k < actualPts.size(); k++){
-            pointsHistory[k].push_back(actualPts[k]);
-        }
       }
       frameCnt++;
     }
@@ -644,7 +636,7 @@ static void roiSelection(int event, int x, int y, int, void*) {
 					//stores ROI
 					roiBox = rectLimits(actualPts);
 				}
-        else if(func == 2 || func == 3)
+        else if(func == 2)
         {
           Point selected = Point(x,y);
           roiPts.push_back(selected);
