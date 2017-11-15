@@ -58,7 +58,6 @@ bool cntFirst = true;
 unsigned int func;		//for program function
 int frameCnt = 0;     //frame counter
 int ultraScale;
-double initArea=0, currArea=0;
 
 //color structure for segmentation
 Scalar color[] =
@@ -474,19 +473,7 @@ int main(int argc, char** argv)
         ss_travSpace << trunc(travSpace*10)/10;
 
         putText(frame, "Displacement: " + ss_dispSpace.str() + " mm", Point(20, 420), FONT_HERSHEY_PLAIN, 1, color[8]);
-        putText(frame, "Traveled Space: " + ss_travSpace.str() + " mm", Point(210, 420), FONT_HERSHEY_PLAIN, 1, color[8]);
-
-
-        //Reset area values
-        scaledRoiPts.clear();
-
-        //Calculates area of shape selection
-        for(unsigned int i=0; i < actualPts.size(); i++){
-        scaledRoiPts.push_back(Point2d(actualPts[i].x*ultraScale/actualFrameHeight, actualPts[i].y*ultraScale/actualFrameHeight));
-        }
-
-        //Current shape area
-        currArea = contourArea(scaledRoiPts);
+        putText(frame, "Traveled Space: " + ss_travSpace.str() + " mm", Point(300, 420), FONT_HERSHEY_PLAIN, 1, color[8]);
 
         if(frameCnt == 1){
           Rect initShape = rectLimits(roiPts);
@@ -496,9 +483,6 @@ int main(int argc, char** argv)
           //Initial height and width of shape;
           initShapeH = initShapeH*ultraScale/actualFrameHeight;
           initShapeW = initShapeW*ultraScale/actualFrameHeight;
-
-          //Initial shape area
-          initArea = contourArea(scaledRoiPts);
         }
 
         //Calculate shape selection height and width
@@ -508,20 +492,16 @@ int main(int argc, char** argv)
         shapeH = shapeH*ultraScale/actualFrameHeight;
         shapeW = shapeW*ultraScale/actualFrameHeight;
 
-        stringstream ss_initShapeH, ss_initShapeW, ss_shapeH, ss_shapeW, ss_initArea, ss_currArea;
+        stringstream ss_initShapeH, ss_initShapeW, ss_shapeH, ss_shapeW;
         ss_initShapeH << trunc(initShapeH*10)/10;
         ss_initShapeW << trunc(initShapeW*10)/10;
         ss_shapeH << trunc(shapeH*10)/10;
         ss_shapeW << trunc(shapeW*10)/10;
-        ss_initArea << trunc(initArea*10)/10;
-        ss_currArea << trunc(currArea*10)/10;
 
         putText(frame, "Init height: " + ss_initShapeH.str() + " mm", Point(20, 440), FONT_HERSHEY_PLAIN, 1, color[8]);
         putText(frame, "Init width: " + ss_initShapeW.str() + " mm", Point(20, 460), FONT_HERSHEY_PLAIN, 1, color[8]);
-        putText(frame, "Current height: " + ss_shapeH.str() + " mm", Point(210, 440), FONT_HERSHEY_PLAIN, 1, color[8]);
-        putText(frame, "Current width: " + ss_shapeW.str() + " mm", Point(210, 460), FONT_HERSHEY_PLAIN, 1, color[8]);
-        putText(frame, "Init area: " + ss_initArea.str() + " mm2", Point(430, 420), FONT_HERSHEY_PLAIN, 1, color[8]);
-        putText(frame, "Current area: " + ss_currArea.str() + " mm2", Point(430, 440), FONT_HERSHEY_PLAIN, 1, color[8]);
+        putText(frame, "Current height: " + ss_shapeH.str() + " mm", Point(300, 440), FONT_HERSHEY_PLAIN, 1, color[8]);
+        putText(frame, "Current width: " + ss_shapeW.str() + " mm", Point(300, 460), FONT_HERSHEY_PLAIN, 1, color[8]);
         actualPts = out;
 
         //Draw polygon using points
