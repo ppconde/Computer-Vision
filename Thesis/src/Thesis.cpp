@@ -90,7 +90,6 @@ void getTable(Mat& tableImg, int rows, int cols, vector <float> displacement, ve
 
 void roi_polygon(vector<Point2f>, Mat);
 
-//Rect rectLimits(vector<Point2f>);
 
 int pnpoly(int nvert, vector<Point2f> roiPts, Point2f prevPt);
 
@@ -747,26 +746,6 @@ void roi_polygon(vector<Point2f> roiPts, Mat frame)
   }
 }
 
-/*
-Rect rectLimits(vector<Point2f> roiPts)
-{
-  Rect rectangle;
-  float smallx = roiPts[0].x;
-  float smally = roiPts[0].y;
-  float bigx = roiPts[0].x;
-  float bigy = roiPts[0].y;
-
-  for(size_t i = 1; i <= roiPts.size()-1; i++)
-  {
-    if(roiPts[i].x < smallx)  smallx = roiPts[i].x;
-    if(roiPts[i].y < smally)  smally = roiPts[i].y;
-    if(roiPts[i].x > bigx)    bigx = roiPts[i].x;
-    if(roiPts[i].y > bigy)    bigy = roiPts[i].y;
-  }
-  rectangle = Rect(Point(smallx, bigy), Point(bigx, smally));
-  return rectangle;
-}
-*/
 int pnpoly(int nvert, vector<Point2f> roiPts, Point2f prevPt)
 {
   /*
