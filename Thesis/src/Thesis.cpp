@@ -475,7 +475,7 @@ int main(int argc, char** argv)
 
           //Initial height and width of shape;
           initShapeH = initShapeH*ultraScale/actualFrameHeight;
-          initShapeW = initShapeW*ultraScale/actualFrameHeight;
+          initShapeW = initShapeW*(4/3)*ultraScale/actualFrameHeight;
         }
 
         //Calculate shape selection height and width
@@ -483,7 +483,7 @@ int main(int argc, char** argv)
         shapeH = shape.height;
         shapeW = shape.width;
         shapeH = shapeH*ultraScale/actualFrameHeight;
-        shapeW = shapeW*ultraScale/actualFrameHeight;
+        shapeW = shapeW*(4/3)*ultraScale/actualFrameHeight;
 
         stringstream ss_initShapeH, ss_initShapeW, ss_shapeH, ss_shapeW;
         ss_initShapeH << trunc(initShapeH*10)/10;
