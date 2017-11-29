@@ -90,7 +90,7 @@ void getTable(Mat& tableImg, int rows, int cols, vector <float> displacement, ve
 
 void roi_polygon(vector<Point2f>, Mat);
 
-Rect rectLimits(vector<Point2f>);
+//Rect rectLimits(vector<Point2f>);
 
 int pnpoly(int nvert, vector<Point2f> roiPts, Point2f prevPt);
 
@@ -264,7 +264,7 @@ int main(int argc, char** argv)
         prevPts = nextPts;
 
         //Region of interest rectangle
-        roiBox = rectLimits(roiPts);
+        roiBox = boundingRect(roiPts);
         nextFrame = nextFrame(roiBox);
       }
       else if(func == 1 || func  == 2){
@@ -325,7 +325,7 @@ int main(int argc, char** argv)
         auxFrame = frame.clone();
 
         //Region of interest rectangle
-        roiBox = rectLimits(roiPts);
+        roiBox = boundingRect(roiPts);
 
         //Mat or image of the roiBox
         nextFrame = nextFrame(roiBox);
@@ -471,7 +471,7 @@ int main(int argc, char** argv)
         putText(frame, "Traveled Space: " + ss_travSpace.str() + " mm", Point(300, 420), FONT_HERSHEY_PLAIN, 1, color[8]);
 
         if(frameCnt == 1){
-          Rect initShape = rectLimits(roiPts);
+          Rect initShape = boundingRect(roiPts);
           initShapeH = initShape.height;
           initShapeW = initShape.width;
 
@@ -481,7 +481,7 @@ int main(int argc, char** argv)
         }
 
         //Calculate shape selection height and width
-        Rect shape = rectLimits(actualPts);
+        Rect shape = boundingRect(actualPts);
         shapeH = shape.height;
         shapeW = shape.width;
         shapeH = shapeH*ultraScale/actualFrameHeight;
@@ -609,7 +609,7 @@ static void roiSelection(int event, int x, int y, int, void*) {
 					circle(frame, selected, 5, color[0], 1);
 
 					//stores ROI
-					roiBox = rectLimits(actualPts);
+					roiBox = boundingRect(actualPts);
 				}
         else if(func == 2)
         {
@@ -747,6 +747,7 @@ void roi_polygon(vector<Point2f> roiPts, Mat frame)
   }
 }
 
+/*
 Rect rectLimits(vector<Point2f> roiPts)
 {
   Rect rectangle;
@@ -765,7 +766,7 @@ Rect rectLimits(vector<Point2f> roiPts)
   rectangle = Rect(Point(smallx, bigy), Point(bigx, smally));
   return rectangle;
 }
-
+*/
 int pnpoly(int nvert, vector<Point2f> roiPts, Point2f prevPt)
 {
   /*
