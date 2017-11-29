@@ -37,7 +37,6 @@ using namespace cv;
 
 //global variables
 Mat roiFrame, roiAux, auxBlackFrame, frame;
-Mat mask, roiMask;    //ROI of Polygon converted to Matrix form
 Rect roiBox;
 vector<Point2f> roiPts;		//points defining a ROI
 vector<Point2f> actualPts;
@@ -260,13 +259,9 @@ int main(int argc, char** argv)
         imshow("ROI Selection", frame);
         waitKey(0);
 
-        Mat mask = Mat::zeros(roiFrame.size(), CV_8UC1);
 
         //Initializes prevPts vector
         prevPts = nextPts;
-
-        //Creates black and white mask
-        roiMask = mask(roiBox);
 
         //Region of interest rectangle
         roiBox = rectLimits(roiPts);
