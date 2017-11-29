@@ -41,7 +41,7 @@ Rect roiBox;
 vector<Point2f> roiPts;		//points defining a ROI
 vector<Point2f> actualPts;
 vector<vector <Point2f> > pointsHistory; //Point history
-vector<vector<Point> > contours; vector<Vec4i> hierarchy;
+vector<Vec4i> hierarchy;
 vector <Point> ROI_Poly;    //Region of interest polygon
 vector <Point2f> scaledRoiPts;
 vector <float> travRes;    //Traveled Space values
@@ -340,7 +340,6 @@ int main(int argc, char** argv)
             cntFirst=false;
         }
 
-        findContours(auxBlackFrame, contours, hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE);
 
         calcOpticalFlowPyrLK(prevFrame, nextFrame, prevPts, nextPts, status, err);
 
